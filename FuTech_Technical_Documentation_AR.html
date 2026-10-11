@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>التوثيق الفني والتقني لمنصة فوتيك - Technical Documentation</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap');
+
+    @page {
+      size: A4;
+      margin: 14mm 14mm 16mm 14mm;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+      direction: rtl;
+      background-color: #ffffff;
+      color: #1e293b;
+      line-height: 1.7;
+      font-size: 13.5px;
+      padding: 0;
+    }
+
+    code, pre {
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      direction: ltr;
+      text-align: left;
+    }
+
+    .header-banner {
+      background: linear-gradient(135deg, #090d16 0%, #1e1b4b 50%, #4338ca 100%);
+      color: #ffffff;
+      padding: 24px 28px;
+      border-radius: 14px;
+      margin-bottom: 22px;
+      box-shadow: 0 4px 15px rgba(15, 23, 42, 0.12);
+    }
+
+    .badge-top {
+      display: inline-block;
+      background: rgba(129, 140, 248, 0.25);
+      border: 1px solid rgba(129, 140, 248, 0.45);
+      color: #c7d2fe;
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 900;
+      margin-bottom: 6px;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      font-size: 13.5px;
+      color: #cbd5e1;
+      font-weight: 400;
+    }
+
+    .section-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 18px;
+      break-inside: avoid;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #f1f5f9;
+    }
+
+    .section-title .icon {
+      font-size: 18px;
+    }
+
+    p {
+      margin-bottom: 10px;
+      color: #334155;
+      text-align: justify;
+    }
+
+    .highlight-box {
+      background: #eef2ff;
+      border-right: 4px solid #4f46e5;
+      padding: 12px 14px;
+      border-radius: 8px;
+      margin: 10px 0;
+      font-size: 13px;
+      color: #312e81;
+    }
+
+    .tech-stack-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .tech-item {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px 14px;
+      break-inside: avoid;
+    }
+
+    .tech-item h4 {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #4338ca;
+      margin-bottom: 4px;
+    }
+
+    .tech-item p {
+      font-size: 12.5px;
+      color: #475569;
+      margin-bottom: 0;
+      line-height: 1.5;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 12px;
+    }
+
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 8px 11px;
+      text-align: right;
+    }
+
+    th {
+      background: #f1f5f9;
+      color: #0f172a;
+      font-weight: 700;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+
+    .code-box {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 12px 15px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      margin: 10px 0;
+      overflow-x: auto;
+      line-height: 1.6;
+    }
+
+    .formula-card {
+      background: #fdf4ff;
+      border: 1px solid #f0abfc;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin: 12px 0;
+      color: #701a75;
+      font-weight: 600;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .sla-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .sla-critical { background: #fee2e2; color: #991b1b; }
+    .sla-high { background: #ffedd5; color: #9a3412; }
+    .sla-normal { background: #e0f2fe; color: #075985; }
+
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 25px;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header Banner -->
+  <div class="header-banner">
+    <span class="badge-top">التوثيق الفني والتقني — Technical Documentation</span>
+    <h1>معمارية وتفاصيل نظام منصة فوتيك (FuTech)</h1>
+    <div class="subtitle">الشرح الهندسي الكامل: البنية التحتية، قواعد البيانات، خوارزمية FQS، وتكامل الـ APIs</div>
+  </div>
+
+  <!-- 1. البنية التقنية -->
+  <div class="section-card">
+    <div class="section-title">
+      <span class="icon">🛠️</span>
+      <span>التقنيات المستخدمة وبنية النظام (Architecture & Tech Stack)</span>
+    </div>
+    <p>
+      النظام مبني بمعمارية حديثة ومفصولة تماماً (Client-Server Architecture) عشان تضمن أعلى سرعة وأمان وسهولة في الصيانة والتطوير:
+    </p>
+    <div class="tech-stack-grid">
+      <div class="tech-item">
+        <h4>🖥️ الواجهة الأمامية (Frontend)</h4>
+        <p><strong>React 19 + TypeScript + Tailwind CSS</strong>: بتضمن سرعة رندر عالية جداً، ونظام Design System متجاوب وشغال RTL بالكامل، مع Framer Motion للحركات والتأثيرات الناعمة.</p>
+      </div>
+
+      <div class="tech-item">
+        <h4>⚙️ السيرفر والباك إند (Backend)</h4>
+        <p><strong>Node.js + Express + TypeScript</strong>: بناء RESTful APIs منظمة ومكتوبة بأنواع بيانات دقيقة (Strict Types)، مع Socket.io للشات المباشر والإشعارات اللحظية.</p>
+      </div>
+
+      <div class="tech-item">
+        <h4>🗄️ قاعدة البيانات (Database)</h4>
+        <p><strong>PostgreSQL + Prisma / Drizzle ORM</strong>: بنستخدم داتابيز علائقية قوية عشان نضمن سلامة البيانات والعلاقات بين المشاريع والمطورين والعروض، وإدارة الـ Migrations بسلاسة.</p>
+      </div>
+
+      <div class="tech-item">
+        <h4>🐳 الحاويات والسحابة (DevOps & Docker)</h4>
+        <p><strong>Docker + GitHub Actions</strong>: توفير بيئة تشغيل معزولة (Containers) عشان المشروع يشتغل عند أي حد بضغطة زر، وخط إنتاج CI/CD لفحص الكود ونشره تلقائياً.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. هيكل قاعدة البيانات -->
+  <div class="section-card">
+    <div class="section-title">
+      <span class="icon">🗄️</span>
+      <span>شكل وتصميم جداول قاعدة البيانات (Database Schema)</span>
+    </div>
+    <p>قاعدة البيانات متقسمة لمجموعة جداول أساسية بتخدم كل ميزات المنصة:</p>
+    <table>
+      <thead>
+        <tr>
+          <th>اسم الجدول</th>
+          <th>أهم الحقول (Attributes)</th>
+          <th>الوظيفة باختصار</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>Users</code></td>
+          <td><code>id, email, password_hash, role, fqs_score, hourly_rate, skills, bio</code></td>
+          <td>بيانات المستخدمين (مطورين أو عملاء)، بما فيها تقييم FQS والمهارات وسعر الساعة.</td>
+        </tr>
+        <tr>
+          <td><code>Projects</code></td>
+          <td><code>id, title, description, budget, deadline, stack, milestones, status, owner_id</code></td>
+          <td>المشاريع المنشورة، ميزانيتها، المراحل التنفيذية، والتقنيات المطلوبة وحالتها.</td>
+        </tr>
+        <tr>
+          <td><code>Applications</code></td>
+          <td><code>id, project_id, developer_id, plan, proposed_budget, proposed_duration, status</code></td>
+          <td>العروض الفنية اللي بيقدمها المطورين على المشاريع مع خطة العمل المقترحة.</td>
+        </tr>
+        <tr>
+          <td><code>Tickets</code></td>
+          <td><code>id, project_id, client_id, developer_id, priority, status, sla_response_hours, logs</code></td>
+          <td>تذاكر الدعم الفني والصيانة بعد تسليم المشروع ومتابعة زمن الاستجابة المحدد.</td>
+        </tr>
+        <tr>
+          <td><code>TicketReplies</code></td>
+          <td><code>id, ticket_id, sender_id, message, code_snippet, created_at</code></td>
+          <td>الردود داخل تذكرة الدعم ومقتطفات الكود أو الرسائل المتبادلة لحل المشكلة.</td>
+        </tr>
+        <tr>
+          <td><code>Messages</code></td>
+          <td><code>id, conversation_id, sender_id, body, is_read, created_at</code></td>
+          <td>الرسائل الفورية للشات المباشر بين المطور والعميل أثناء سير العمل.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 3. خوارزمية FQS -->
+  <div class="section-card">
+    <div class="section-title">
+      <span class="icon">📊</span>
+      <span>خوارزمية مؤشر جودة المستقل (FQS Engine) بتتحسب إزاي؟</span>
+    </div>
+    <p>
+      مؤشر <strong>FQS (Freelancer Quality Score)</strong> بيتحسب تلقائياً من 100 بعد ما المطور يخلص مشاريعه، ومش معتمد على عدد المشاريع وبس، ده بيوزن كفاءة المطور بالمعادلة دي:
+    </p>
+
+    <div class="formula-card">
+      درجة FQS = (معدل إكمال المشاريع × 35%) + (الالتزام بالوقت والميزانية × 30%) + (تقييمات العملاء × 20%) + (تكرار التوظيف × 15%)
+    </div>
+
+    <div class="highlight-box">
+      <strong>شرح المعايير الأربعة ببساطة:</strong>
+      <ul style="margin-right: 18px; margin-top: 6px; line-height: 1.7;">
+        <li><strong>معدل الإكمال (35%):</strong> هل المطور بيسلم المشروع كامل ولا العميل بيضطر يلغي المشروع بسبب أخطاء أو عجز عن التنفيذ؟</li>
+        <li><strong>الالتزام بالوقت والميزانية (30%):</strong> هل بيسلم في المعاد المتفق عليه بدون طلب فلوس زيادة فجأة؟</li>
+        <li><strong>تقييم العملاء (20%):</strong> متوسط النجوم (من 1 لـ 5) مضروبة في النسبة المئوية المكافئة.</li>
+        <li><strong>تكرار التوظيف (15%):</strong> هل نفس العميل رجع وظف المطور ده تاني في مشاريع تانية؟ وده أقوى دليل على احترافيته.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 4. سياسة تسليم الكود على GitHub -->
+  <div class="section-card">
+    <div class="section-title">
+      <span class="icon">📦</span>
+      <span>سياسة تسليم الكود والمستودعات (Git Handover Standards)</span>
+    </div>
+    <p>عشان نضمن إن العميل يستلم شغل احترافي يقدر أي تيم يكمل عليه في المستقبل، المطور ملزم بالمعايير دي:</p>
+    <div class="code-box">
+# شكل المستودع الإلزامي عند تسليم أي مشروع:
+├── README.md            # خطوات التثبيت، والتشغيل المحلي، ومتطلبات السيرفر
+├── .env.example         # نموذج للمفاتيح والمتغيرات بدون كتابة أسرار حقيقية
+├── Dockerfile           # بناء الحاوية المعزولة للتطبيق
+├── docker-compose.yml   # تشغيل الداتابيز والتطبيق بأمر واحد
+├── src/                 # كود المشروع مع هيكلة كلين واختبارات أساسية
+└── tests/               # ملفات فحص الجودة (Unit / Integration Tests)
+    </div>
+    <p style="font-size: 12.5px; color: #475569;">
+      • تسليم المشروع بيكون بنقل ملكية المستودع رسمياً (Transfer Ownership) لحساب العميل على GitHub أو GitLab، مع إعطائه صلاحيات Admin كاملة.
+    </p>
+  </div>
+
+  <!-- 5. اتفاقية الـ SLA وتذاكر الدعم -->
+  <div class="section-card">
+    <div class="section-title">
+      <span class="icon">⏱️</span>
+      <span>اتفاقية مستوى الخدمة وتذاكر الدعم (Ongoing Support & SLA)</span>
+    </div>
+    <p>
+      كل مشروع بيتسلم بيكون معاه <strong>ضمان مجاني لمدة 30 يوم</strong> لتصليح أي عيوب أو أخطاء برمجية ظهرت في الكود، مع مستويات استجابة ملزمة:
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>أولوية التذكرة</th>
+          <th style="width: 140px;">الحد الأقصى للاستجابة</th>
+          <th>أمثلة على نوع المشكلة</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="sla-badge sla-critical">حرج (Critical)</span></td>
+          <td><strong>خلال ساعتين فقط</strong></td>
+          <td>الموقع واقع تماماً، خلل أمني مفاجئ، السيرفر مش بيستجيب، أو الداتابيز مفصولة.</td>
+        </tr>
+        <tr>
+          <td><span class="sla-badge sla-high">عالي (High)</span></td>
+          <td><strong>خلال 6 ساعات</strong></td>
+          <td>في ميزة أساسية مش شغالة (زي تسجيل الدخول أو إرسال الإيميلات)، وباقي الموقع شغال عادي.</td>
+        </tr>
+        <tr>
+          <td><span class="sla-badge sla-normal">متوسط / منخفض</span></td>
+          <td><strong>خلال 12 - 24 ساعة</strong></td>
+          <td>طلب تعديل شكلي بسيط، بطء في نقطة معينة، أو استفسار بخصوص التوثيق.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 6. أهم الـ APIs -->
+  <div class="section-card">
+    <div class="section-title">
+      <span class="icon">🔌</span>
+      <span>أهم واجهات برمجة التطبيقات (Core REST APIs)</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>المسار (Endpoint)</th>
+          <th style="width: 70px;">Method</th>
+          <th>الوظيفة والبيانات المرسلة</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>/api/auth/login</code></td>
+          <td><code>POST</code></td>
+          <td>تسجيل الدخول وإرجاع رمز الحماية JWT مع بيانات المستخدم.</td>
+        </tr>
+        <tr>
+          <td><code>/api/developers</code></td>
+          <td><code>GET</code></td>
+          <td>استرجاع قائمة المطورين مع الفلترة بالمهارات وسعر الساعة والـ FQS.</td>
+        </tr>
+        <tr>
+          <td><code>/api/projects</code></td>
+          <td><code>POST</code></td>
+          <td>نشر مشروع جديد بواسطة العميل مع تحديد الميزانية والمواعيد.</td>
+        </tr>
+        <tr>
+          <td><code>/api/projects/:id/apply</code></td>
+          <td><code>POST</code></td>
+          <td>تقديم عرض فني من المطور (خطة العمل، السعر، والمدة).</td>
+        </tr>
+        <tr>
+          <td><code>/api/tickets</code></td>
+          <td><code>POST</code></td>
+          <td>فتح تذكرة دعم وصيانة جديدة مع تحديد الأولوية وإرفاق اللوجز.</td>
+        </tr>
+        <tr>
+          <td><code>/api/chat/messages</code></td>
+          <td><code>POST</code></td>
+          <td>إرسال رسالة في الشات المباشر مع بثها فوراً عبر Socket.io للطرف التاني.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    منصة فوتيك (FuTech Platform) — التوثيق الفني والتقني المعتمد — جميع الحقوق محفوظة ©
+  </div>
+
+</body>
+</html>

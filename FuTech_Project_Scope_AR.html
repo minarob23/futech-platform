@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>نطاق عمل مشروع منصة فوتيك - Project Scope</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
+
+    @page {
+      size: A4;
+      margin: 14mm 14mm 16mm 14mm;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+      direction: rtl;
+      background-color: #ffffff;
+      color: #1e293b;
+      line-height: 1.7;
+      font-size: 13.5px;
+      padding: 0;
+    }
+
+    .header-banner {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0369a1 100%);
+      color: #ffffff;
+      padding: 24px 28px;
+      border-radius: 14px;
+      margin-bottom: 22px;
+      box-shadow: 0 4px 15px rgba(15, 23, 42, 0.12);
+    }
+
+    .badge-top {
+      display: inline-block;
+      background: rgba(56, 189, 248, 0.2);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #38bdf8;
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 900;
+      margin-bottom: 6px;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      font-size: 13.5px;
+      color: #cbd5e1;
+      font-weight: 400;
+    }
+
+    .section-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 18px;
+      break-inside: avoid;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #f1f5f9;
+    }
+
+    .section-title .icon {
+      font-size: 18px;
+    }
+
+    p {
+      margin-bottom: 10px;
+      color: #334155;
+      text-align: justify;
+    }
+
+    .highlight-box {
+      background: #f0fdf4;
+      border-right: 4px solid #16a34a;
+      padding: 12px 14px;
+      border-radius: 8px;
+      margin: 10px 0;
+      font-size: 13px;
+      color: #14532d;
+    }
+
+    .alert-box {
+      background: #fef2f2;
+      border-right: 4px solid #dc2626;
+      padding: 12px 14px;
+      border-radius: 8px;
+      margin: 10px 0;
+      font-size: 13px;
+      color: #7f1d1d;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .feature-item {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px 14px;
+      break-inside: avoid;
+    }
+
+    .feature-item h4 {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #0369a1;
+      margin-bottom: 5px;
+    }
+
+    .feature-item p {
+      font-size: 12.5px;
+      color: #475569;
+      margin-bottom: 0;
+      line-height: 1.55;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 12.5px;
+    }
+
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 9px 12px;
+      text-align: right;
+    }
+
+    th {
+      background: #f1f5f9;
+      color: #0f172a;
+      font-weight: 700;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .badge-in {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .badge-out {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 25px;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header Banner -->
+  <div class="header-banner">
+    <span class="badge-top">وثيقة نطاق العمل — Project Scope</span>
+    <h1>منصة فوتيك (FuTech Platform)</h1>
+    <div class="subtitle">سوق برمجيات حر وحاضنة كفاءات تقنية عربية بضمانات جودة حقيقية ودعم مستمر</div>
+  </div>
+
+  <!-- 1. فكرة المشروع -->
+  <div class="section-card">
+    <div class="section-title">
+      <span class="icon">💡</span>
+      <span>المشروع ده عبارة عن إيه وفكرته الأساسية؟</span>
+    </div>
+    <p>
+      منصة <strong>فوتيك (FuTech)</strong> مش مجرد موقع فريلانس تقليدي زي المواقع العادية اللي مليانة عروض عشوائية.. دي منصة وحاضنة متخصصة في <strong>البرمجيات وتكنولوجيا المعلومات</strong> بس. الفكرة كلها قايمة على إننا نوصل أصحاب المشاريع والشركات بأشطر مهندسي البرمجيات في الوطن العربي، مع التركيز التام على <strong>جودة الكود، وتنظيم تسليم المستودعات البرمجية، وتقديم دعم فني وصيانة حقيقية بعد التسليم</strong>.
+    </p>
+    <div class="highlight-box">
+      <strong>الهدف من المنصة ببساطة:</strong> حل أكبر أزمة بتواجه أي حد عاوز يبرمج مشروع (إنه يستلم كود بايظ ومش متوثق، أو المبرمج يختفي بعد التسليم)، وفي نفس الوقت المطور الشاطر يلاقي تقدير حقيقي لشغله ومؤشر جودة عادل يبين كفاءته والتزامه.
+    </div>
+  </div>
+
+  <!-- 2. مين هيستخدم المنصة -->
+  <div class="section-card">
+    <div class="section-title">
+      <span class="icon">👥</span>
+      <span>مين الناس اللي هتستخدم المنصة دي؟</span>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-item">
+        <h4>🏢 أصحاب المشاريع والشركات (Clients)</h4>
+        <p>أي شخص أو شركة عندها فكرة تطبيق، موقع، أو نظام إداري وعايزة مبرمج محترف ينفذها بضمان استلام الكود على GitHub كامل مع الدعم الفني وتذاكر الصيانة.</p>
+      </div>
+      <div class="feature-item">
+        <h4>💻 المطورين والمهندسين (Developers)</h4>
+        <p>المبرمجين المستقلين اللي عايزين يشتغلوا في مشاريع حقيقية ويكون ليهم بروفايل احترافي بيتحسب فيه مؤشر جودة (FQS) بناءً على شغلهم الفعلي والتزامهم.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. الميزات اللي جوة نطاق المشروع -->
+  <div class="section-card">
+    <div class="section-title">
+      <span class="icon">🚀</span>
+      <span>الميزات الأساسية اللي جوة نطاق المشروع (In-Scope)</span>
+    </div>
+
+    <div class="feature-grid">
+      <div class="feature-item">
+        <h4>1. نظام الحسابات والبروفايل</h4>
+        <p>تسجيل دخول بالإيميل أو بحساب GitHub، مع صفحة شخصية للمطور فيها معرض أعماله وخبراته وتقييم FQS التفصيلي وسعر الساعة وحالته إذا كان متاح للشغل حالياً ولا مشغول.</p>
+      </div>
+
+      <div class="feature-item">
+        <h4>2. سوق المشاريع ونظام العروض</h4>
+        <p>العميل ينزل تفاصيل مشروعه (الميزانية، الوقت، التقنيات المطلوبة، ومراحل التنفيذ)، والمطورين يقدموا عروض فنية محددة بخطة عمل وتكلفة ومدة واضحة.</p>
+      </div>
+
+      <div class="feature-item">
+        <h4>3. خوارزمية جودة المستقل (FQS)</h4>
+        <p>مؤشر رقمي ذكي بيقيس جودة المطور من 100 بناءً على 4 حاجات: إكمال المشاريع، الالتزام بالوقت والميزانية، تقييمات العملاء، ومعدل تكرار توظيف العميل لنفس المطور.</p>
+      </div>
+
+      <div class="feature-item">
+        <h4>4. سياسة تسليم الكود (Git Handover)</h4>
+        <p>تسليم رسمي لمستودعات الكود على GitHub أو GitLab، مع إلزامية وجود ملفات التوثيق التشغيلي README و Dockerfile وبيئة التشغيل بالكامل.</p>
+      </div>
+
+      <div class="feature-item">
+        <h4>5. نظام تذاكر الدعم والصيانة (SLA)</h4>
+        <p>سيستم تذاكر مدمج يتيح للعميل بعد استلام المشروع إنه يفتح تذكرة بطلب صيانة أو تصليح Bug، مع فترات استجابة محددة (ساعتين للطوارئ، 6 ساعات للعالي، ويوم للمتوسط).</p>
+      </div>
+
+      <div class="feature-item">
+        <h4>6. الشات المباشر ولوحات التحكم</h4>
+        <p>شات لحظي فوري بين العميل والمبرمج لمتابعة الشغل أول بأول، مع لوحة تحكم ذكية لكل مستخدم عشان يتابع مشاريعه، وتذاكره، وإحصائياته من مكان واحد.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. جوة النطاق وبرة النطاق -->
+  <div class="section-card">
+    <div class="section-title">
+      <span class="icon">⚖️</span>
+      <span>إيه اللي جوة النطاق وإيه اللي برة الحسبة في المرحلة دي؟</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>الميزة / الخاصية</th>
+          <th style="width: 110px;">الحالة</th>
+          <th>التوضيح والسبب</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>سوق المشاريع والعروض الفنية</strong></td>
+          <td><span class="badge badge-in">جوة النطاق</span></td>
+          <td>الجوهر الأساسي للمنصة عشان يربط العميل بالمطور ويوثق متطلبات الشغل.</td>
+        </tr>
+        <tr>
+          <td><strong>حساب مؤشر الجودة FQS</strong></td>
+          <td><span class="badge badge-in">جوة النطاق</span></td>
+          <td>الميزة التنافسية اللي بتميز فوتيك عن أي موقع تاني عشان تضمن كفاءة المبرمجين.</td>
+        </tr>
+        <tr>
+          <td><strong>نظام تذاكر الدعم والـ SLA</strong></td>
+          <td><span class="badge badge-in">جوة النطاق</span></td>
+          <td>عشان نحافظ على استقرار المشاريع ونمنع اختفاء المطور بعد تسليم الكود.</td>
+        </tr>
+        <tr>
+          <td><strong>بوابات الدفع الإلكتروني المعقدة واقتطاع النسب</strong></td>
+          <td><span class="badge badge-out">برة النطاق</span></td>
+          <td>التعامل المالي حالياً بيكون مباشر وحر بين العميل والمطور لتسهيل التجربة وبدون خصومات مجحفة.</td>
+        </tr>
+        <tr>
+          <td><strong>الاستضافة السحابية الآلية للتطبيقات</strong></td>
+          <td><span class="badge badge-out">برة النطاق</span></td>
+          <td>المنصة بتركز على تسليم الكود والمستودعات والكونفجريشن، واستضافة السيرفر بتبقى مسؤولية العميل بسيرفره.</td>
+        </tr>
+        <tr>
+          <td><strong>تطبيقات الموبايل الأصلية (iOS / Android)</strong></td>
+          <td><span class="badge badge-out">برة النطاق</span></td>
+          <td>التركيز في المرحلة الحالية على موقع ويب متجاوب وشغال بأعلى كفاءة وسرعة على أي شاشة وموبايل.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 5. معايير قبول المشروع -->
+  <div class="section-card">
+    <div class="section-title">
+      <span class="icon">✅</span>
+      <span>معايير قبول وتسليم المشروع (Acceptance Criteria)</span>
+    </div>
+    <p>علشان نعتبر المشروع ده اكتمل وناجح وجاهز للاستخدام الفعلي، لازم يحقق المعايير دي:</p>
+    <ul style="padding-right: 22px; color: #334155; font-size: 13px; line-height: 1.8;">
+      <li>الواجهات تكون شغالة وسلسة 100% ومتجاوبة مع كل الشاشات وأجهزة الموبايل (Responsive).</li>
+      <li>كل البيانات بتتسجل وتتحفظ في قاعدة بيانات حقيقية بدون فقدان لأي تفاصيل.</li>
+      <li>نظام التقييم FQS بيحسب الدرجة بدقة من غير أي تلاعب وبناءً على البيانات الفعلية للمشاريع السابقة.</li>
+      <li>عملية تسليم المستودع ونقل ملكية Git تكون واضحة ومتبعة لكل معايير الكود النظيف.</li>
+      <li>الشات ونظام التذاكر يكون سريع وفوري وبدون أي تهنيج أو تأخير.</li>
+    </ul>
+  </div>
+
+  <div class="footer">
+    منصة فوتيك (FuTech Platform) — وثيقة نطاق العمل الرسمية — جميع الحقوق محفوظة ©
+  </div>
+
+</body>
+</html>
