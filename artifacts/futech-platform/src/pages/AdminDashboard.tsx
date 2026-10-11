@@ -54,13 +54,13 @@ export function AdminDashboard({ store, update, notify, setModal }: AdminDashboa
         ? {
             ...t,
             status: 'قيد المعالجة' as const,
-            replies: [...t.replies, ticketReply.trim()],
+            replies: [...(t.replies || []), ticketReply.trim()],
           }
         : t
     );
     update('tickets', updated);
     setActiveTicket((prev) =>
-      prev ? { ...prev, status: 'قيد المعالجة', replies: [...prev.replies, ticketReply.trim()] } : null
+      prev ? { ...prev, status: 'قيد المعالجة', replies: [...(prev.replies || []), ticketReply.trim()] } : null
     );
     setTicketReply('');
     notify('تم إرسال الرد وتحديث حالة التذكرة');
@@ -425,7 +425,7 @@ export function AdminDashboard({ store, update, notify, setModal }: AdminDashboa
 
                 {/* Conversation History */}
                 <div className="max-h-72 space-y-3 overflow-y-auto rounded-2xl bg-[#fafbfc] p-4 text-xs">
-                  {activeTicket.replies.map((reply, index) => (
+                  {(activeTicket.replies || []).map((reply, index) => (
                     <div
                       key={index}
                       className={`rounded-xl p-3 leading-relaxed ${
@@ -437,7 +437,7 @@ export function AdminDashboard({ store, update, notify, setModal }: AdminDashboa
                       <div className="mb-1 text-[10px] font-bold text-slate-400">
                         {index === 0 ? `رسالة العميل (${activeTicket.owner}):` : 'رد فريق الدعم:'}
                       </div>
-                      {reply}
+                      {typeof reply === 'string' ? reply : reply.message}
                     </div>
                   ))}
                 </div>
