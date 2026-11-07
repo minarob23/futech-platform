@@ -179,19 +179,10 @@ export function DeveloperAnnouncementModal({ isOpen, onClose }: DeveloperAnnounc
               <button
                 type="button"
                 onClick={() => scrollToSection('sec-cv-ar')}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-cyan-50 border border-cyan-200/80 hover:bg-cyan-100 text-cyan-800 px-3 py-1.5 transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-cyan-50 border border-cyan-200/80 hover:bg-cyan-100 text-cyan-800 px-3.5 py-1.5 transition cursor-pointer"
               >
                 <Code2 size={14} className="text-cyan-600" />
                 <span>سيرة مينا وسابقة الأعمال 💻</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => scrollToSection('sec-cv-en')}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-50 border border-indigo-200/80 hover:bg-indigo-100 text-indigo-800 px-3 py-1.5 transition cursor-pointer"
-              >
-                <Globe size={14} className="text-indigo-600" />
-                <span>English CV & Stack 🌐</span>
               </button>
             </div>
           </div>
@@ -388,80 +379,6 @@ export function DeveloperAnnouncementModal({ isOpen, onClose }: DeveloperAnnounc
                     • <strong>ALX Africa:</strong> طوّرت أكثر من 15 أداة برمجية منخفضة المستوى بلغات C و C++ و Python لأنظمة UNIX.
                   </p>
                 </div>
-              </div>
-            </div>
-
-            {/* ================= SECTION 4: COMPLETE ENGLISH CV ================= */}
-            <div id="sec-cv-en" className="space-y-4 pt-6 text-left" dir="ltr">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                <div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-800 text-xs font-black mb-1.5">
-                    <Globe size={14} className="text-indigo-600" />
-                    <span>Official English Resume</span>
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-black text-slate-900 font-sans">
-                    MINA ROBIR MAGDY FAWZY
-                  </h3>
-                  <div className="text-xs sm:text-sm text-teal-700 font-bold font-sans">
-                    FULL STACK SOFTWARE ENGINEER • Cairo, Egypt
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 text-xs font-mono font-bold text-slate-600">
-                  <span>Phone: +201115294735</span>
-                  <span>•</span>
-                  <a href="mailto:menarobir246rm@gmail.com" className="text-rose-600 underline">
-                    menarobir246rm@gmail.com
-                  </a>
-                  <span>•</span>
-                  <a href="https://github.com/minarob23" target="_blank" rel="noopener noreferrer" className="text-slate-900 underline">
-                    github.com/minarob23
-                  </a>
-                </div>
-              </div>
-
-              {/* Professional Summary */}
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5 text-xs sm:text-sm text-slate-700 leading-relaxed font-sans">
-                <strong>PROFESSIONAL SUMMARY:</strong> Full Stack Software Engineer with 3+ years of experience, including a systems engineering internship and contract delivery of production web applications across the full Software Development Life Cycle (SDLC) for Health Tech SaaS, B2B e-commerce, and POS clients. Builds responsive frontends with React and Next.js (App Router) and backend services and APIs with Node.js (Express.js) and Python (FastAPI), with additional experience in Java (Spring Boot) and C++ through academic and systems projects. Designs PostgreSQL multi-tenant schemas with Row-Level Security and deploys on AWS. Integrates AI-assisted workflows into daily development to speed up scaffolding and testing.
-              </div>
-
-              {/* Technical Skills Matrix */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-sans">
-                <div className="rounded-xl border border-slate-200 p-3.5 bg-white shadow-2xs">
-                  <div className="font-bold text-teal-800">AI & LLM Engineering:</div>
-                  <div className="text-slate-600 mt-1">
-                    LLM Function Calling, RAG, Multimodal LLM APIs, Prompt Engineering.
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 p-3.5 bg-white shadow-2xs">
-                  <div className="font-bold text-cyan-800">Frontend Development:</div>
-                  <div className="text-slate-600 mt-1">
-                    React, Next.js (App Router), TypeScript, JavaScript (ES6+), Tailwind CSS, Vite, Electron.js, Three.js, Responsive Web Design, HTML5, CSS3.
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 p-3.5 bg-white shadow-2xs">
-                  <div className="font-bold text-indigo-800">Backend & Distributed Systems:</div>
-                  <div className="text-slate-600 mt-1">
-                    Node.js, Express.js, Python, FastAPI, Java, Spring Boot, RESTful APIs, WebSockets, Redis, BullMQ, OAuth 2.0, JWT, RBAC.
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 p-3.5 bg-white shadow-2xs">
-                  <div className="font-bold text-emerald-800">Databases & Cloud Architecture:</div>
-                  <div className="text-slate-600 mt-1">
-                    PostgreSQL (Supabase, Neon), SQLite, Row-Level Security (RLS), Supabase Auth, Drizzle ORM, Prisma, AWS (S3, Lambda, EC2), Docker, CI/CD, Git.
-                  </div>
-                </div>
-              </div>
-
-              {/* Experience Highlights */}
-              <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50 text-xs text-slate-700 space-y-2 font-sans">
-                <div className="font-bold text-slate-900 text-sm">WORK EXPERIENCE:</div>
-                <div>• <strong>Full Stack Software Engineer (Contract)</strong> (Jul 2025 - Present): Delivered 5 production platforms (Algostep Health Tech, Nile Tex B2B, ECS apparel, Puno POS desktop cashier).</div>
-                <div>• <strong>Mathematics Assistant & Tutor</strong> (Sep 2021 - Jun 2025): Tutored 120+ students, built automated scripts saving 180+ hours annually.</div>
-                <div>• <strong>Software Systems Engineering Intern - ALX Africa</strong> (Nov 2023 - Dec 2024): Developed 15+ low-level UNIX systems tools in C, C++, and Python, validated with Valgrind.</div>
               </div>
             </div>
           </div>
