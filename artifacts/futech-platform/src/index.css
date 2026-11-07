@@ -3,7 +3,7 @@
 @import 'tw-animate-css';
 @plugin "@tailwindcss/typography";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
   --color-background: hsl(var(--background));
@@ -192,48 +192,47 @@
 }
 
 .dark {
-  --button-outline: rgba(255, 255, 255, 0.1);
-  --badge-outline: rgba(255, 255, 255, 0.05);
+  --button-outline: rgba(255, 255, 255, 0.12);
+  --badge-outline: rgba(255, 255, 255, 0.08);
 
-  --opaque-button-border-intensity: 9; /* In terms of percentages */
+  --opaque-button-border-intensity: 12;
 
-  /* Backgrounds applied on top of other backgrounds when hovered/active */
   --elevate-1: rgba(255, 255, 255, 0.04);
-  --elevate-2: rgba(255, 255, 255, 0.09);
+  --elevate-2: rgba(255, 255, 255, 0.08);
 
-  --background: 210 37% 96%;
-  --foreground: 221 31% 17%;
-  --border: 214 27% 89%;
-  --card: 0 0% 100%;
-  --card-foreground: 221 31% 17%;
-  --card-border: 214 27% 89%;
-  --sidebar: 217 43% 17%;
+  --background: 222 47% 8%;       /* #090e17 deep midnight */
+  --foreground: 210 40% 98%;      /* #f8fafc */
+  --border: 217 33% 18%;          /* subtle slate-800 */
+  --card: 222 47% 11%;            /* #0f172a card dark */
+  --card-foreground: 210 40% 98%;
+  --card-border: 217 33% 20%;
+  --sidebar: 222 47% 8%;
   --sidebar-foreground: 210 30% 94%;
-  --sidebar-border: 217 34% 25%;
+  --sidebar-border: 217 34% 16%;
   --sidebar-primary: 187 76% 46%;
   --sidebar-primary-foreground: 217 43% 12%;
-  --sidebar-accent: 217 35% 24%;
+  --sidebar-accent: 217 35% 18%;
   --sidebar-accent-foreground: 210 35% 96%;
   --sidebar-ring: 187 76% 46%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 221 31% 17%;
-  --popover-border: 214 27% 89%;
-  --primary: 222 63% 34%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 190 63% 93%;
-  --secondary-foreground: 203 58% 27%;
-  --muted: 210 32% 94%;
-  --muted-foreground: 215 14% 46%;
+  --popover: 222 47% 11%;
+  --popover-foreground: 210 40% 98%;
+  --popover-border: 217 33% 20%;
+  --primary: 187 76% 43%;          /* glowing cyan/teal */
+  --primary-foreground: 222 47% 9%;
+  --secondary: 217 33% 16%;
+  --secondary-foreground: 210 40% 92%;
+  --muted: 217 33% 14%;
+  --muted-foreground: 215 20% 65%;
   --accent: 187 76% 43%;
-  --accent-foreground: 0 0% 100%;
+  --accent-foreground: 222 47% 9%;
   --destructive: 2 67% 51%;
   --destructive-foreground: 0 0% 100%;
-  --input: 214 27% 86%;
+  --input: 217 33% 22%;
   --ring: 187 76% 43%;
-  --chart-1: 222 63% 34%;
-  --chart-2: 187 76% 43%;
-  --chart-3: 155 44% 42%;
-  --chart-4: 35 72% 56%;
+  --chart-1: 187 76% 43%;
+  --chart-2: 217 76% 56%;
+  --chart-3: 155 55% 48%;
+  --chart-4: 38 85% 58%;
   --chart-5: 2 67% 51%;
 
   --shadow-2xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0);
@@ -254,6 +253,256 @@
     0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0),
     0px 8px 10px -1px hsl(202.8169 89.1213% 53.1373% / 0);
   --shadow-2xl: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0);
+}
+
+/* Global Smooth Theme Transition */
+html, body {
+  transition: background-color 0.28s ease, color 0.28s ease, border-color 0.28s ease;
+}
+
+/* Comprehensive Dark Mode Overhaul (All pages, sections, cards, modals, hovers, inputs & buttons) */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #070c16 !important;
+  color: #f1f5f9 !important;
+}
+
+/* 1. Neutralize and darken all light gradients on sections & hero */
+html.dark section#home,
+html.dark section#fqs,
+html.dark section#roadmap,
+html.dark section#devs,
+html.dark section#projects,
+html.dark [class*="bg-gradient-to-b from-[#f"],
+html.dark [class*="from-[#f1f9f9]"],
+html.dark [class*="from-[#f2f8fa]"],
+html.dark [class*="from-[#f2f9f9]"],
+html.dark [class*="to-[#fafbfc]"],
+html.dark [class*="to-white"] {
+  background-image: none !important;
+  background-color: #070c16 !important;
+}
+
+/* 2. Top Headers / Navbars in Dark Mode */
+html.dark header,
+html.dark .bg-white\/95,
+html.dark [class*="bg-white/95"] {
+  background-color: rgba(9, 15, 26, 0.96) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* 3. Deep Midnight Backgrounds for Main Layouts & Wrappers */
+html.dark .bg-\[\#fafbfc\],
+html.dark .bg-\[\#f4f7fa\],
+html.dark .bg-\[\#fbfcfd\],
+html.dark .bg-\[\#f3f7f9\],
+html.dark .bg-\[\#f6f9fc\],
+html.dark .bg-\[\#f8fafc\],
+html.dark .bg-\[\#f9fafc\],
+html.dark [class*="bg-[#fafbfc]"],
+html.dark [class*="bg-[#f4f7fa]"],
+html.dark [class*="bg-[#fbfcfd]"],
+html.dark [class*="bg-[#f3f7f9]"],
+html.dark [class*="bg-[#f8fafc]"],
+html.dark [class*="bg-[#f9fafc]"] {
+  background-color: #070c16 !important;
+}
+
+/* 4. Midnight Surface for Cards, Panels, Modals, Popovers & Drawers */
+html.dark .bg-white,
+html.dark .bg-white\/80,
+html.dark .bg-white\/70,
+html.dark .bg-white\/60,
+html.dark [class~="bg-white"],
+html.dark [class*="bg-white/95"],
+html.dark [class*="bg-white/80"],
+html.dark [class*="bg-white/70"] {
+  background-color: #0d1524 !important;
+}
+
+/* 5. Secondary Slate & Neutral Surfaces (Tabs, Toolbars, Strips) */
+html.dark .bg-slate-50,
+html.dark .bg-slate-100,
+html.dark .bg-slate-200,
+html.dark .bg-gray-50,
+html.dark .bg-gray-100,
+html.dark [class*="bg-slate-50"],
+html.dark [class*="bg-slate-100"],
+html.dark [class*="bg-slate-200"],
+html.dark [class*="bg-gray-50"],
+html.dark [class*="bg-gray-100"] {
+  background-color: #121c2e !important;
+}
+
+/* 6. Soft Accent & Pale Teal Highlights -> Sleek Night Cyan Glow */
+html.dark .bg-\[\#edf8f9\],
+html.dark .bg-\[\#eef8f8\],
+html.dark .bg-\[\#eef9fa\],
+html.dark .bg-\[\#e6f7f8\],
+html.dark .bg-\[\#e6f7f7\],
+html.dark .bg-\[\#e8f6f7\],
+html.dark .bg-\[\#e8f7f8\],
+html.dark .bg-\[\#eaf6f6\],
+html.dark .bg-\[\#eaf6f7\],
+html.dark .bg-\[\#eaf7f8\],
+html.dark .bg-\[\#ebf7f7\],
+html.dark .bg-\[\#e2f5f6\],
+html.dark .bg-\[\#e5f5f6\],
+html.dark .bg-\[\#e5f5f7\],
+html.dark .bg-\[\#e5f6f7\],
+html.dark .bg-\[\#daf2f3\],
+html.dark .bg-\[\#f0f9fa\],
+html.dark .bg-\[\#f0fafb\],
+html.dark .bg-\[\#eaf1fb\],
+html.dark .bg-\[\#edf2fb\],
+html.dark .bg-\[\#edf4fb\],
+html.dark .bg-\[\#f2eefb\],
+html.dark .bg-\[\#f3e8ff\],
+html.dark .bg-\[\#fff4df\],
+html.dark .bg-\[\#fff5df\],
+html.dark [class*="bg-[#e2f"],
+html.dark [class*="bg-[#e5f"],
+html.dark [class*="bg-[#e6f"],
+html.dark [class*="bg-[#e8f"],
+html.dark [class*="bg-[#eaf"],
+html.dark [class*="bg-[#ebf"],
+html.dark [class*="bg-[#edf"],
+html.dark [class*="bg-[#eef"],
+html.dark [class*="bg-[#f0f"],
+html.dark [class*="bg-[#f2e"],
+html.dark [class*="bg-[#f3e"],
+html.dark [class*="bg-[#daf"] {
+  background-color: rgba(20, 36, 56, 0.75) !important;
+}
+
+/* 7. ALL HOVER STATES: Prevent buttons and links from flashing white on hover */
+html.dark [class*="hover:bg-slate-50"]:hover,
+html.dark [class*="hover:bg-slate-100"]:hover,
+html.dark [class*="hover:bg-slate-200"]:hover,
+html.dark [class*="hover:bg-gray-50"]:hover,
+html.dark [class*="hover:bg-gray-100"]:hover,
+html.dark [class*="hover:bg-white"]:hover,
+html.dark [class*="hover:bg-[#d"]:hover,
+html.dark [class*="hover:bg-[#e"]:hover,
+html.dark [class*="hover:bg-[#f"]:hover {
+  background-color: #1a2a44 !important;
+  color: #ffffff !important;
+}
+
+/* 8. Text Color Inversions: Crisp white headings & readable body */
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .text-gray-900,
+html.dark .text-gray-800,
+html.dark [class*="text-[#14283d]"],
+html.dark [class*="text-[#14283e]"],
+html.dark [class*="text-[#14293f]"],
+html.dark [class*="text-[#152a3f]"],
+html.dark [class*="text-[#152a40]"],
+html.dark [class*="text-[#152c42]"],
+html.dark [class*="text-[#152c43]"],
+html.dark [class*="text-[#152e46]"],
+html.dark [class*="text-[#162a3f]"],
+html.dark [class*="text-[#162a40]"],
+html.dark [class*="text-[#162a42]"],
+html.dark [class*="text-[#162b40]"],
+html.dark [class*="text-[#162c42]"],
+html.dark [class*="text-[#162c43]"],
+html.dark [class*="text-[#162d46]"],
+html.dark [class*="text-[#162d47]"],
+html.dark [class*="text-[#172b40]"],
+html.dark [class*="text-[#172c42]"],
+html.dark [class*="text-[#172c43]"],
+html.dark [class*="text-[#172c44]"],
+html.dark [class*="text-[#172d44]"],
+html.dark [class*="text-[#172e47]"],
+html.dark [class*="text-[#172f49]"],
+html.dark [class*="text-[#17304d]"],
+html.dark [class*="text-[#173250]"],
+html.dark [class*="text-[#173352]"],
+html.dark [class*="text-[#18314e]"],
+html.dark [class*="text-[#183452]"],
+html.dark [class*="text-[#183552]"],
+html.dark [class*="text-[#183654]"],
+html.dark [class*="text-[#1a2d42]"],
+html.dark [class*="text-[#1a2e44]"],
+html.dark [class*="text-[#1b3450]"],
+html.dark [class*="text-[#1d3550]"],
+html.dark [class*="text-[#1f3650]"],
+html.dark [class*="text-[#1f3854]"],
+html.dark [class*="text-[#1f4268]"],
+html.dark [class*="text-[#1f456e]"] {
+  color: #f8fafc !important;
+}
+
+/* Secondary body text */
+html.dark .text-slate-700,
+html.dark .text-slate-600,
+html.dark .text-gray-700,
+html.dark .text-gray-600 {
+  color: #cbd5e1 !important;
+}
+
+/* Dark teal accents -> Radiant vibrant cyan in dark mode */
+html.dark [class*="text-[#136167]"],
+html.dark [class*="text-[#167078]"],
+html.dark [class*="text-[#19757d]"],
+html.dark [class*="text-[#1a767d]"],
+html.dark [class*="text-[#1a7f87]"],
+html.dark [class*="text-[#1b7e86]"],
+html.dark [class*="text-[#1b7f87]"],
+html.dark [class*="text-[#1c7880]"],
+html.dark [class*="text-[#1c7b83]"],
+html.dark [class*="text-[#1c7e86]"],
+html.dark [class*="text-[#1c848c]"],
+html.dark [class*="text-[#1d7d85]"],
+html.dark [class*="text-[#1d828a]"],
+html.dark [class*="text-[#1e838b]"],
+html.dark [class*="text-[#1e848c]"],
+html.dark [class*="text-[#1e868e]"],
+html.dark [class*="text-[#1e8992]"],
+html.dark [class*="text-[#1e8b94]"],
+html.dark [class*="text-[#1f878f]"] {
+  color: #4ed9df !important;
+}
+
+/* 9. Borders */
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-slate-200\/80,
+html.dark .border-slate-300,
+html.dark .border-gray-200,
+html.dark [class*="border-slate-100"],
+html.dark [class*="border-slate-200"],
+html.dark [class*="border-slate-300"],
+html.dark [class*="border-[#d6f2f3]"],
+html.dark [class*="border-[#daf2f3]"] {
+  border-color: rgba(255, 255, 255, 0.09) !important;
+}
+
+/* 10. Form Controls, Inputs, Selects, Textareas */
+html.dark input,
+html.dark select,
+html.dark textarea,
+html.dark [class*="focus:bg-white"]:focus {
+  background-color: #121c2e !important;
+  color: #f8fafc !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* 11. Modals & Dialogs Backdrop */
+html.dark .bg-slate-950\/70,
+html.dark .bg-slate-950\/75,
+html.dark .bg-slate-950\/80 {
+  background-color: rgba(2, 6, 17, 0.85) !important;
 }
 
 @layer base {

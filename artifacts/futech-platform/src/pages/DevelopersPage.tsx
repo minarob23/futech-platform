@@ -4,15 +4,59 @@ import {
   Search, Users, BadgeCheck, Star, MapPin, Clock, DollarSign,
   Briefcase, CheckCircle2, ChevronDown, Filter, Sparkles, MessageCircle,
   ArrowLeft, X, Layers, ShieldCheck, Code, Globe, UserPlus, SlidersHorizontal,
-  LayoutGrid, List
+  LayoutGrid, List, Play, Image as ImageIcon
 } from 'lucide-react';
-import { Developer, Project, Conversation, Store } from '../data/mockData';
+import { Developer, Project, Conversation, Store, PortfolioItem } from '../types';
+import { DeveloperShowcaseModal } from '../components/DeveloperShowcaseModal';
+import { LiveProjectPreviewModal } from '../components/LiveProjectPreviewModal';
+import { getDeveloperCurrency } from '../data/countries';
 
 interface DevelopersPageProps {
   store: Store;
   update: (key: keyof Store, value: any) => void;
   notify: (msg: string) => void;
   go: (path: string) => void;
+}
+
+export function getDeveloperStatusConfig(availability?: string, isChatting: boolean = false) {
+  const raw = availability || 'متاح الآن';
+
+  if (isChatting || raw === 'مشغول' || raw.includes('مشغول') || raw.includes('عميل') || raw === 'متاح جزئياً') {
+    return {
+      type: 'busy' as const,
+      label: 'مشغول (يتحدث مع عميل)',
+      shortLabel: 'مشغول',
+      dotClass: 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]',
+      pulseClass: 'bg-amber-400 animate-pulse',
+      badgeClass: 'bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/80',
+      dotBadgeColor: 'bg-amber-500',
+      tooltip: 'مشغول حالياً في محادثة مع عميل أو تسليم مرحلة برمجية',
+    };
+  }
+
+  if (raw === 'متاح الآن') {
+    return {
+      type: 'available' as const,
+      label: 'متاح الآن',
+      shortLabel: 'متاح الآن',
+      dotClass: 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]',
+      pulseClass: 'bg-emerald-400 animate-ping',
+      badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/80',
+      dotBadgeColor: 'bg-emerald-500',
+      tooltip: 'متاح الآن للتعاقد الفوري والبدء في مشاريع جديدة',
+    };
+  }
+
+  return {
+    type: 'unavailable' as const,
+    label: raw === 'متاح قريباً' ? 'متاح قريباً' : 'غير متاح حالياً',
+    shortLabel: 'غير متاح',
+    dotClass: 'bg-slate-400',
+    pulseClass: '',
+    badgeClass: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700',
+    dotBadgeColor: 'bg-slate-400',
+    tooltip: 'غير متاح حالياً للعمل على مشاريع جديدة',
+  };
 }
 
 export function DevelopersPage({ store, update, notify, go }: DevelopersPageProps) {
@@ -28,13 +72,15 @@ export function DevelopersPage({ store, update, notify, go }: DevelopersPageProp
 
   // Modals state
   const [selectedDev, setSelectedDev] = useState<Developer | null>(null);
+  const [selectedPreviewProject, setSelectedPreviewProject] = useState<PortfolioItem | null>(null);
+  const [selectedPreviewDev, setSelectedPreviewDev] = useState<Developer | null>(null);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [inviteModalDev, setInviteModalDev] = useState<Developer | null>(null);
 
   // New developer form state for "Join as Developer"
   const [newName, setNewName] = useState('');
   const [newSpecialty, setNewSpecialty] = useState('');
-  const [newCategory, setNewCategory] = useState<'fullstack' | 'frontend' | 'backend' | 'mobile' | 'ai' | 'devops'>('fullstack');
+  const [newCategory, setNewCategory] = useState<'fullstack' | 'frontend' | 'backend' | 'mobile' | 'ai' | 'devops' | 'cms'>('fullstack');
   const [newLocation, setNewLocation] = useState('الرياض، المملكة العربية السعودية');
   const [newHourlyRate, setNewHourlyRate] = useState(150);
   const [newBio, setNewBio] = useState('');
@@ -50,10 +96,11 @@ export function DevelopersPage({ store, update, notify, go }: DevelopersPageProp
     { id: 'mobile', label: 'تطبيقات الجوال' },
     { id: 'ai', label: 'ذكاء اصطناعي' },
     { id: 'devops', label: 'سحابة وDevOps' },
+    { id: 'cms', label: 'منصات CMS ومتاجر (WordPress / Shopify)' },
   ];
 
   // Quick skill pills
-  const popularSkills = ['React', 'Next.js', 'Node.js', 'Flutter', 'FastAPI', 'PostgreSQL', 'Laravel', 'Docker'];
+  const popularSkills = ['React', 'Next.js', 'Node.js', 'WordPress', 'Shopify', 'WooCommerce', 'Wix', 'Flutter', 'FastAPI', 'PostgreSQL', 'Laravel', 'Docker'];
 
   // Filtered & Sorted developers
   const filteredDevelopers = useMemo(() => {
@@ -70,9 +117,21 @@ export function DevelopersPage({ store, update, notify, go }: DevelopersPageProp
         // Category
         const matchesCategory = selectedCategory === 'all' || dev.category === selectedCategory;
 
-        // Availability
-        const matchesAvailability =
-          selectedAvailability === 'all' || dev.availability === selectedAvailability;
+        // Availability with Live Chat & Status Detection
+        let matchesAvailability = true;
+        if (selectedAvailability !== 'all') {
+          const isChatting = (store.conversations || []).some(
+            (c) => c.otherUser === dev.name && c.messages && c.messages.length > 0
+          );
+          const st = getDeveloperStatusConfig(dev.availability, isChatting);
+          if (selectedAvailability === 'available' || selectedAvailability === 'متاح الآن') {
+            matchesAvailability = st.type === 'available';
+          } else if (selectedAvailability === 'busy' || selectedAvailability.includes('مشغول') || selectedAvailability === 'متاح جزئياً') {
+            matchesAvailability = st.type === 'busy';
+          } else {
+            matchesAvailability = st.type === 'unavailable';
+          }
+        }
 
         // Level
         const matchesLevel = selectedLevel === 'all' || dev.level === selectedLevel;
@@ -135,7 +194,7 @@ export function DevelopersPage({ store, update, notify, go }: DevelopersPageProp
     const newDev: Developer = {
       id: 'dev-' + Math.random().toString(36).substring(2, 9),
       name: newName.trim(),
-      avatar: '/images/dev-male.jpg',
+      avatar: '',
       specialty: newSpecialty.trim(),
       category: newCategory,
       location: newLocation.trim(),
@@ -163,6 +222,7 @@ export function DevelopersPage({ store, update, notify, go }: DevelopersPageProp
       work: newWork.trim(),
       portfolio: [
         {
+          id: 'proj-' + Date.now(),
           title: newWork.trim(),
           description: 'مشروع رئيسي يوضح الجاهزية والالتزام بأفضل ممارسات البرمجة.',
           tech: newSkills.split(/[,،]/).map((s) => s.trim()).slice(0, 3),
@@ -283,16 +343,16 @@ export function DevelopersPage({ store, update, notify, go }: DevelopersPageProp
           <div className="flex flex-wrap items-center gap-3">
             {/* Availability */}
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-slate-500">الحالة:</span>
+              <span className="text-slate-500 font-bold">حالة التوفر:</span>
               <select
                 value={selectedAvailability}
                 onChange={(e) => setSelectedAvailability(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#38b5bd]"
+                className="rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-1.5 text-xs font-bold text-slate-700 outline-none transition focus:border-[#38b5bd]"
               >
-                <option value="all">الكل</option>
-                <option value="متاح الآن">متاح الآن فوراً</option>
-                <option value="متاح جزئياً">متاح جزئياً</option>
-                <option value="متاح قريباً">متاح قريباً</option>
+                <option value="all">كافة الحالات</option>
+                <option value="available">🟢 متاح الآن للتعاقد</option>
+                <option value="busy">🟡 مشغول (يتحدث مع عميل)</option>
+                <option value="unavailable">⚪ غير متاح حالياً</option>
               </select>
             </div>
 
@@ -424,74 +484,112 @@ export function DevelopersPage({ store, update, notify, go }: DevelopersPageProp
         </div>
       ) : viewMode === 'grid' ? (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredDevelopers.map((dev) => (
-            <motion.div
-              key={dev.id}
-              whileHover={{ y: -4 }}
-              transition={{ duration: 0.2 }}
-              className="flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-xs transition hover:border-[#68c9cf] hover:shadow-lg hover:shadow-slate-200/50"
-            >
-              <div className="p-5">
-                {/* Header: Avatar, Name, FQS Badge */}
-                <div className="flex items-start gap-3.5">
-                  <div className="relative shrink-0">
-                    <img
-                      src={dev.avatar}
-                      alt={dev.name}
-                      className="h-14 w-14 rounded-2xl object-cover ring-2 ring-slate-100"
-                    />
-                    <span
-                      className={`absolute -bottom-1 -left-1 h-3.5 w-3.5 rounded-full border-2 border-white ${
-                        dev.availability === 'متاح الآن'
-                          ? 'bg-[#3bb87c]'
-                          : dev.availability === 'متاح جزئياً'
-                          ? 'bg-[#dfa637]'
-                          : 'bg-slate-400'
-                      }`}
-                      title={dev.availability}
-                    />
-                  </div>
+          {filteredDevelopers.map((dev) => {
+            const isChatting = (store.conversations || []).some(
+              (c) => c.otherUser === dev.name && c.messages && c.messages.length > 0
+            );
+            const statusCfg = getDeveloperStatusConfig(dev.availability, isChatting);
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <h3 className="truncate text-sm font-extrabold text-[#1a2d42]">
-                        {dev.name}
-                      </h3>
-                      {dev.verified && (
-                        <BadgeCheck size={16} className="shrink-0 text-[#29aab3]" />
+            return (
+              <motion.div
+                key={dev.id}
+                whileHover={{ y: -4 }}
+                transition={{ duration: 0.2 }}
+                className="flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-xs transition hover:border-[#68c9cf] hover:shadow-lg hover:shadow-slate-200/50"
+              >
+                <div className="p-5">
+                  {/* Header: Avatar, Name, Live Status Badge, FQS */}
+                  <div className="flex items-start gap-3.5">
+                    <div className="relative shrink-0">
+                      {dev.avatar && dev.avatar.trim() !== '' ? (
+                        <img
+                          src={dev.avatar}
+                          alt={dev.name}
+                          className="h-14 w-14 rounded-2xl object-cover ring-2 ring-slate-100"
+                        />
+                      ) : (
+                        <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-tr from-[#152a40] via-[#1f3f61] to-[#2d5a8a] text-lg font-black text-amber-400 ring-2 ring-slate-100 shadow-sm">
+                          {dev.name ? dev.name.charAt(0) : 'م'}
+                        </div>
                       )}
+                      {/* Live Circle Indicator (دائرة خضراء للمتاح / صفراء للمشغول / رمادية لغير المتاح) */}
+                      <span
+                        className="absolute -bottom-1 -left-1 flex h-4 w-4 items-center justify-center"
+                        title={statusCfg.tooltip}
+                      >
+                        {statusCfg.pulseClass && (
+                          <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${statusCfg.pulseClass}`} />
+                        )}
+                        <span className={`relative inline-flex h-3.5 w-3.5 rounded-full border-2 border-white ${statusCfg.dotClass}`} />
+                      </span>
                     </div>
-                    <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">
-                      {dev.specialty}
-                    </p>
-                    <div className="mt-1 flex items-center gap-1 text-[11px] text-slate-400">
-                      <MapPin size={11} className="shrink-0" />
-                      <span className="truncate">{dev.location}</span>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h3 className="truncate text-sm font-extrabold text-[#1a2d42]">
+                          {dev.name}
+                        </h3>
+                        {dev.verified && (
+                          <BadgeCheck size={16} className="shrink-0 text-[#29aab3]" />
+                        )}
+                      </div>
+
+                      {/* Status pill label */}
+                      <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${statusCfg.badgeClass}`}
+                          title={statusCfg.tooltip}
+                        >
+                          <span className={`h-1.5 w-1.5 rounded-full ${statusCfg.dotBadgeColor}`} />
+                          <span>{statusCfg.label}</span>
+                        </span>
+                      </div>
+
+                      <p className="mt-1 truncate text-xs font-semibold text-slate-500">
+                        {dev.specialty}
+                      </p>
+                      <div className="mt-1 flex items-center gap-1 text-[11px] text-slate-400">
+                        <MapPin size={11} className="shrink-0" />
+                        <span className="truncate">{dev.location}</span>
+                      </div>
                     </div>
-                  </div>
 
                   {/* FQS Rating Badge */}
-                  <div className="flex shrink-0 flex-col items-center rounded-2xl border border-[#daf2f3] bg-[#edf8f9] px-2.5 py-1.5 text-center">
-                    <span className="text-xs font-black text-[#1e8992]">{dev.fqs}</span>
-                    <span className="text-[9px] font-bold text-[#35979f]">FQS</span>
-                  </div>
+                  {dev.fqs > 0 && (dev.completedProjects > 0 || dev.reviewsCount > 0) ? (
+                    <div className="flex shrink-0 flex-col items-center rounded-2xl border border-[#daf2f3] bg-[#edf8f9] px-2.5 py-1.5 text-center">
+                      <span className="text-xs font-black text-[#1e8992]">{dev.fqs}</span>
+                      <span className="text-[9px] font-bold text-[#35979f]">FQS</span>
+                    </div>
+                  ) : (
+                    <div className="flex shrink-0 flex-col items-center rounded-2xl border border-teal-500/20 bg-teal-500/10 px-2 py-1 text-center">
+                      <span className="text-[10px] font-black text-teal-700 dark:text-teal-300">مطور معتمد</span>
+                      <span className="text-[8px] font-bold text-teal-600/70">FQS جديد</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Rating & Completed Projects Stats */}
                 <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-xs">
-                  <div className="flex items-center gap-1">
-                    <Star size={13} className="fill-[#e5a93b] text-[#e5a93b]" />
-                    <span className="font-extrabold text-slate-800">{dev.rating}</span>
-                    <span className="text-[10px] text-slate-400">({dev.reviewsCount})</span>
-                  </div>
+                  {dev.reviewsCount > 0 ? (
+                    <div className="flex items-center gap-1">
+                      <Star size={13} className="fill-[#e5a93b] text-[#e5a93b]" />
+                      <span className="font-extrabold text-slate-800">{dev.rating}</span>
+                      <span className="text-[10px] text-slate-400">({dev.reviewsCount})</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 text-slate-400">
+                      <Star size={13} className="text-slate-300" />
+                      <span className="text-[10px] font-semibold">عضو جديد</span>
+                    </div>
+                  )}
                   <span className="text-slate-300">|</span>
                   <div className="flex items-center gap-1 text-[11px] text-slate-600">
                     <Briefcase size={12} className="text-slate-400" />
-                    <span>{dev.completedProjects} مشروع منجز</span>
+                    <span>{dev.completedProjects} مشاريع</span>
                   </div>
                   <span className="text-slate-300">|</span>
                   <div className="text-[11px] font-bold text-[#1f3854]">
-                    {dev.hourlyRate} <span className="text-[9px] text-slate-500">ر.س/س</span>
+                    {dev.hourlyRate} <span className="text-[9px] text-slate-500">{getDeveloperCurrency(dev)}/س</span>
                   </div>
                 </div>
 
@@ -516,70 +614,118 @@ export function DevelopersPage({ store, update, notify, go }: DevelopersPageProp
                     </span>
                   )}
                 </div>
+
+                {/* Project Image & Portfolio Strip */}
+                {dev.portfolio && dev.portfolio.length > 0 && (
+                  <div
+                    onClick={() => {
+                      setSelectedDev(dev);
+                    }}
+                    className="mt-3 cursor-pointer rounded-2xl border border-teal-500/30 bg-teal-500/10 p-2.5 text-[10px] font-bold text-teal-700 dark:text-teal-300 transition hover:bg-teal-500/20 group/p"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 font-black">
+                        <ImageIcon size={11} className="text-teal-500" />
+                        <span>معرض أعمال المطور</span>
+                      </span>
+                      <span className="text-[9px] text-teal-600 dark:text-teal-400 group-hover/p:translate-x-0.5 transition">عرض الصور ↗</span>
+                    </div>
+                    <div className="mt-1 font-black text-slate-800 dark:text-white truncate">
+                      {dev.portfolio[0].title}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Card Footer Actions */}
-              <div className="flex items-center gap-2 border-t border-slate-100 bg-[#fafbfc] p-3.5">
+              <div className="flex items-center gap-2 border-t border-slate-100 bg-[#fafbfc] p-3.5 dark:border-slate-800 dark:bg-slate-900/40">
                 <button
                   onClick={() => setSelectedDev(dev)}
-                  className="flex-1 rounded-xl border border-slate-200 bg-white py-2 text-center text-xs font-bold text-slate-700 transition hover:border-[#33a3ab] hover:bg-[#f6fcfa] hover:text-[#187e85]"
+                  className="flex-1 rounded-xl border border-slate-200 bg-white py-2 text-center text-[11px] font-bold text-slate-700 transition hover:border-[#33a3ab] hover:bg-[#f6fcfa] hover:text-[#187e85] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 >
-                  عرض الملف
+                  السيرة الذاتية والملف 📄
                 </button>
+
+                {dev.portfolio && dev.portfolio.length > 0 && (
+                  <button
+                    onClick={() => {
+                      setSelectedPreviewProject(dev.portfolio[0]);
+                      setSelectedPreviewDev(dev);
+                    }}
+                    className="rounded-xl border border-teal-500/40 bg-teal-500/10 px-2.5 py-2 text-xs font-black text-teal-700 hover:bg-teal-500/20 dark:text-teal-300 transition"
+                    title="معاينة حية للمشروع"
+                  >
+                    <Play size={12} className="fill-teal-500" />
+                  </button>
+                )}
+
                 <button
                   onClick={() => handleStartChat(dev)}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#203d62] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#2b5180] active:scale-95"
+                  className="inline-flex items-center justify-center gap-1 rounded-xl bg-[#203d62] px-3.5 py-2 text-xs font-bold text-white transition hover:bg-[#2b5180] active:scale-95"
                 >
-                  <MessageCircle size={14} />
+                  <MessageCircle size={13} />
                   <span>محادثة</span>
                 </button>
               </div>
             </motion.div>
-          ))}
+          );
+        })}
         </div>
       ) : (
         /* List View */
         <div className="space-y-3">
-          {filteredDevelopers.map((dev) => (
-            <div
-              key={dev.id}
-              className="flex flex-col justify-between gap-4 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs transition hover:border-[#68c9cf] md:flex-row md:items-center"
-            >
-              <div className="flex items-start gap-4">
-                <div className="relative shrink-0">
-                  <img
-                    src={dev.avatar}
-                    alt={dev.name}
-                    className="h-14 w-14 rounded-2xl object-cover ring-2 ring-slate-100"
-                  />
-                  <span
-                    className={`absolute -bottom-1 -left-1 h-3.5 w-3.5 rounded-full border-2 border-white ${
-                      dev.availability === 'متاح الآن'
-                        ? 'bg-[#3bb87c]'
-                        : dev.availability === 'متاح جزئياً'
-                        ? 'bg-[#dfa637]'
-                        : 'bg-slate-400'
-                    }`}
-                  />
-                </div>
+          {filteredDevelopers.map((dev) => {
+            const isChatting = (store.conversations || []).some(
+              (c) => c.otherUser === dev.name && c.messages && c.messages.length > 0
+            );
+            const statusCfg = getDeveloperStatusConfig(dev.availability, isChatting);
 
-                <div className="space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm font-extrabold text-[#1a2d42]">{dev.name}</h3>
-                    {dev.verified && <BadgeCheck size={16} className="text-[#29aab3]" />}
-                    <span className="rounded-lg bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
-                      {dev.specialty}
-                    </span>
+            return (
+              <div
+                key={dev.id}
+                className="flex flex-col justify-between gap-4 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs transition hover:border-[#68c9cf] md:flex-row md:items-center dark:border-white/10 dark:bg-[#0c1524]"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="relative shrink-0">
+                    {dev.avatar && dev.avatar.trim() !== '' ? (
+                      <img
+                        src={dev.avatar}
+                        alt={dev.name}
+                        className="h-14 w-14 rounded-2xl object-cover ring-2 ring-slate-100"
+                      />
+                    ) : (
+                      <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-tr from-[#152a40] via-[#1f3f61] to-[#2d5a8a] text-lg font-black text-amber-400 ring-2 ring-slate-100 shadow-sm">
+                        {dev.name ? dev.name.charAt(0) : 'م'}
+                      </div>
+                    )}
+                    {/* Live Circle Indicator */}
                     <span
-                      className={`rounded-lg px-2 py-0.5 text-[10px] font-bold ${
-                        dev.availability === 'متاح الآن'
-                          ? 'bg-[#e8f7ee] text-[#2b905f]'
-                          : 'bg-slate-100 text-slate-500'
-                      }`}
+                      className="absolute -bottom-1 -left-1 flex h-4 w-4 items-center justify-center"
+                      title={statusCfg.tooltip}
                     >
-                      {dev.availability}
+                      {statusCfg.pulseClass && (
+                        <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${statusCfg.pulseClass}`} />
+                      )}
+                      <span className={`relative inline-flex h-3.5 w-3.5 rounded-full border-2 border-white ${statusCfg.dotClass}`} />
                     </span>
                   </div>
+
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-sm font-extrabold text-[#1a2d42] dark:text-white">{dev.name}</h3>
+                      {dev.verified && <BadgeCheck size={16} className="text-[#29aab3]" />}
+                      <span className="rounded-lg bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">
+                        {dev.specialty}
+                      </span>
+                      {/* Status pill label */}
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${statusCfg.badgeClass}`}
+                        title={statusCfg.tooltip}
+                      >
+                        <span className={`h-1.5 w-1.5 rounded-full ${statusCfg.dotBadgeColor}`} />
+                        <span>{statusCfg.label}</span>
+                      </span>
+                    </div>
 
                   <p className="max-w-xl text-xs leading-relaxed text-slate-600">{dev.bio}</p>
 
@@ -601,24 +747,43 @@ export function DevelopersPage({ store, update, notify, go }: DevelopersPageProp
                 <div className="flex items-center gap-4 text-xs">
                   <div className="text-right">
                     <div className="font-extrabold text-[#203d62]">
-                      {dev.hourlyRate} <span className="text-[10px] text-slate-500">ر.س/س</span>
+                      {dev.hourlyRate} <span className="text-[10px] text-slate-500">{getDeveloperCurrency(dev)}/س</span>
                     </div>
                     <div className="text-[10px] text-slate-400">سعر الساعة</div>
                   </div>
 
-                  <div className="flex items-center gap-1 rounded-xl bg-[#eef9fa] px-3 py-1.5">
-                    <ShieldCheck size={14} className="text-[#21959e]" />
-                    <span className="font-black text-[#1e8b94]">{dev.fqs}</span>
-                    <span className="text-[10px] font-bold text-[#3298a0]">FQS</span>
-                  </div>
+                  {dev.fqs > 0 && (dev.completedProjects > 0 || dev.reviewsCount > 0) ? (
+                    <div className="flex items-center gap-1 rounded-xl bg-[#eef9fa] px-3 py-1.5">
+                      <ShieldCheck size={14} className="text-[#21959e]" />
+                      <span className="font-black text-[#1e8b94]">{dev.fqs}</span>
+                      <span className="text-[10px] font-bold text-[#3298a0]">FQS</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 rounded-xl bg-teal-500/10 px-2.5 py-1 text-teal-700 dark:text-teal-300">
+                      <ShieldCheck size={14} className="text-teal-500" />
+                      <span className="text-[10px] font-bold">FQS قيد التقييم</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {dev.portfolio && dev.portfolio.length > 0 && (
+                    <button
+                      onClick={() => {
+                        setSelectedPreviewProject(dev.portfolio[0]);
+                        setSelectedPreviewDev(dev);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-teal-500/40 bg-teal-500/10 px-3 py-2 text-xs font-bold text-teal-700 hover:bg-teal-500/20 dark:text-teal-300 transition"
+                    >
+                      <Play size={12} className="fill-teal-500" />
+                      <span>معاينة حية</span>
+                    </button>
+                  )}
                   <button
                     onClick={() => setSelectedDev(dev)}
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                   >
-                    الملف الشامل
+                    السيرة الذاتية والملف 📄
                   </button>
                   <button
                     onClick={() => handleStartChat(dev)}
@@ -630,207 +795,60 @@ export function DevelopersPage({ store, update, notify, go }: DevelopersPageProp
                 </div>
               </div>
             </div>
-          ))}
+          );
+        })}
         </div>
       )}
 
-      {/* Developer Profile Modal */}
-      <AnimatePresence>
-        {selectedDev && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/60 p-4 backdrop-blur-sm"
-            onClick={() => setSelectedDev(null)}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              onClick={(e) => e.stopPropagation()}
-              className="my-auto w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl"
-            >
-              {/* Profile Header */}
-              <div className="relative bg-gradient-to-r from-[#172c44] to-[#203d62] p-6 text-white">
-                <button
-                  onClick={() => setSelectedDev(null)}
-                  className="absolute left-5 top-5 rounded-full bg-white/10 p-2 text-white/80 hover:bg-white/20 hover:text-white"
-                >
-                  <X size={18} />
-                </button>
+            {/* Developer Comprehensive Showcase Modal */}
+      <DeveloperShowcaseModal
+        isOpen={Boolean(selectedDev)}
+        onClose={() => setSelectedDev(null)}
+        developer={selectedDev}
+        onStartChat={(dev) => {
+          setSelectedDev(null);
+          handleStartChat(dev);
+        }}
+        onHireDeveloper={(dev) => {
+          setSelectedDev(null);
+          go('/post-project');
+        }}
+        notify={notify}
+        currentUser={store.currentUser}
+        onAddReview={(devId, rev) => {
+          const nextDevs = store.developers.map((d) => {
+            if (d.id === devId) {
+              const currentReviews = d.reviews || [];
+              const nextReviews = [rev, ...currentReviews];
+              const sum = nextReviews.reduce((acc, r) => acc + r.rating, 0);
+              const nextRating = Number((sum / nextReviews.length).toFixed(2));
+              return {
+                ...d,
+                reviews: nextReviews,
+                rating: nextRating,
+                reviewsCount: (d.reviewsCount || 0) + 1,
+              };
+            }
+            return d;
+          });
+          update('developers', nextDevs);
+        }}
+      />
 
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                  <img
-                    src={selectedDev.avatar}
-                    alt={selectedDev.name}
-                    className="h-20 w-20 rounded-2xl object-cover ring-4 ring-white/20"
-                  />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-xl font-extrabold">{selectedDev.name}</h2>
-                      {selectedDev.verified && (
-                        <BadgeCheck size={20} className="text-[#41c3ca]" />
-                      )}
-                    </div>
-                    <p className="mt-0.5 text-xs font-semibold text-[#82d7db]">
-                      {selectedDev.specialty}
-                    </p>
-                    <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-300">
-                      <span className="flex items-center gap-1">
-                        <MapPin size={13} />
-                        {selectedDev.location}
-                      </span>
-                      <span>·</span>
-                      <span className="flex items-center gap-1">
-                        <Briefcase size={13} />
-                        {selectedDev.experienceYears} سنوات خبرة
-                      </span>
-                      <span>·</span>
-                      <span className="flex items-center gap-1">
-                        <Star size={13} className="fill-[#f2b343] text-[#f2b343]" />
-                        {selectedDev.rating} ({selectedDev.reviewsCount} تقييم)
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Profile Body */}
-              <div className="max-h-[65vh] space-y-6 overflow-y-auto p-6 text-xs text-slate-700">
-                {/* FQS Quality Standard Breakdown */}
-                <div className="rounded-2xl border border-[#cbebec] bg-[#f2f9f9] p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 font-extrabold text-[#1c7880]">
-                      <ShieldCheck size={18} />
-                      <span>مؤشر جودة المستقل (FQS): {selectedDev.fqs}/100</span>
-                    </div>
-                    <span className="rounded-full bg-[#1c7880] px-3 py-0.5 text-[11px] font-bold text-white">
-                      مطور معتمد
-                    </span>
-                  </div>
-
-                  <p className="mt-1 text-[11px] text-slate-500">
-                    نظام تقييم خوارزمي لكفاءة والتزام المطور يحدد أولوية ظهوره وفرص فوزه بالمشاريع البرمجية
-                  </p>
-
-                  <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <div className="rounded-xl bg-white p-2.5 text-center shadow-xs">
-                      <div className="text-sm font-extrabold text-[#1c7880]">
-                        %{selectedDev.fqsBreakdown.completionRate ?? selectedDev.fqsBreakdown.tests ?? 95}
-                      </div>
-                      <div className="mt-0.5 text-[10px] font-bold text-slate-700">معدل إكمال المشاريع</div>
-                      <div className="text-[9px] text-slate-400">Completion Rate</div>
-                    </div>
-                    <div className="rounded-xl bg-white p-2.5 text-center shadow-xs">
-                      <div className="text-sm font-extrabold text-[#1c7880]">
-                        %{selectedDev.fqsBreakdown.onTimeBudget ?? selectedDev.fqsBreakdown.codeQuality ?? 96}
-                      </div>
-                      <div className="mt-0.5 text-[10px] font-bold text-slate-700">الوقت والميزانية</div>
-                      <div className="text-[9px] text-slate-400">On Time & Budget</div>
-                    </div>
-                    <div className="rounded-xl bg-white p-2.5 text-center shadow-xs">
-                      <div className="text-sm font-extrabold text-[#1c7880]">
-                        %{selectedDev.fqsBreakdown.clientRating ?? selectedDev.fqsBreakdown.deliveryRate ?? 98}
-                      </div>
-                      <div className="mt-0.5 text-[10px] font-bold text-slate-700">تقييم العملاء</div>
-                      <div className="text-[9px] text-slate-400">Client Rating</div>
-                    </div>
-                    <div className="rounded-xl bg-white p-2.5 text-center shadow-xs">
-                      <div className="text-sm font-extrabold text-[#1c7880]">
-                        %{selectedDev.fqsBreakdown.repeatHireRate ?? selectedDev.fqsBreakdown.security ?? 90}
-                      </div>
-                      <div className="mt-0.5 text-[10px] font-bold text-slate-700">التوظيف المتكرر</div>
-                      <div className="text-[9px] text-slate-400">Repeat Hire Rate</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* About Bio */}
-                <div>
-                  <h4 className="text-xs font-extrabold text-[#1f3750]">نبذة مهنية</h4>
-                  <p className="mt-2 text-xs leading-relaxed text-slate-600">{selectedDev.bio}</p>
-                </div>
-
-                {/* Skills */}
-                <div>
-                  <h4 className="text-xs font-extrabold text-[#1f3750]">المهارات والتقنيات</h4>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {selectedDev.skills.map((skill) => (
-                      <span
-                        key={skill}
-                        className="rounded-xl bg-slate-100 px-3 py-1 font-bold text-slate-700"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Portfolio / Featured Works */}
-                <div>
-                  <h4 className="text-xs font-extrabold text-[#1f3750]">أبرز المشاريع السابقة</h4>
-                  <div className="mt-2.5 space-y-3">
-                    {selectedDev.portfolio.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className="rounded-2xl border border-slate-100 bg-[#f9fafc] p-4"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <h5 className="font-extrabold text-[#1b2f44]">{item.title}</h5>
-                          {item.metrics && (
-                            <span className="shrink-0 rounded-md bg-[#e4f6f5] px-2 py-0.5 text-[10px] font-bold text-[#1f878f]">
-                              {item.metrics}
-                            </span>
-                          )}
-                        </div>
-                        <p className="mt-1.5 text-xs text-slate-600">{item.description}</p>
-                        <div className="mt-2.5 flex flex-wrap gap-1.5">
-                          {item.tech.map((t) => (
-                            <span
-                              key={t}
-                              className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-slate-600"
-                            >
-                              {t}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Profile Modal Footer Actions */}
-              <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-6 py-4">
-                <div>
-                  <span className="text-xs text-slate-500">سعر الساعة المقترح:</span>
-                  <div className="text-base font-black text-[#1b344e]">
-                    {selectedDev.hourlyRate} ر.س / ساعة
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setSelectedDev(null)}
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100"
-                  >
-                    إغلاق
-                  </button>
-                  <button
-                    onClick={() => {
-                      const dev = selectedDev;
-                      setSelectedDev(null);
-                      handleStartChat(dev);
-                    }}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#203d62] px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-[#284f80]"
-                  >
-                    <MessageCircle size={15} />
-                    <span>بدء محادثة مباشرة</span>
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* Live Project Preview Modal */}
+      <LiveProjectPreviewModal
+        isOpen={Boolean(selectedPreviewProject)}
+        onClose={() => {
+          setSelectedPreviewProject(null);
+          setSelectedPreviewDev(null);
+        }}
+        project={selectedPreviewProject}
+        developer={selectedPreviewDev}
+        onHireDeveloper={(dev) => {
+          setSelectedPreviewProject(null);
+          go('/post-project');
+        }}
+      />
 
       {/* Join as Developer Modal */}
       <AnimatePresence>
@@ -899,6 +917,7 @@ export function DevelopersPage({ store, update, notify, go }: DevelopersPageProp
                       <option value="mobile">تطبيقات الجوال (Mobile)</option>
                       <option value="ai">ذكاء اصطناعي (AI)</option>
                       <option value="devops">حلول سحابية (DevOps)</option>
+                      <option value="cms">تطوير منصات CMS ومتاجر (WordPress / Shopify / Wix)</option>
                     </select>
                   </div>
                 </div>

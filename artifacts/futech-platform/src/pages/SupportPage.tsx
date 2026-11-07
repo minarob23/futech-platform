@@ -1,15 +1,20 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'wouter';
+import { Link, useSearch } from 'wouter';
 import {
   LifeBuoy, Lightbulb, Send, CheckCircle2, ThumbsUp, Sparkles,
-  HelpCircle, Mail, ShieldCheck, HeartHandshake, Filter,
+  HelpCircle, ShieldCheck, HeartHandshake, Filter,
   ArrowLeft, Tag, Layers, Star, Clock, AlertTriangle, AlertCircle,
   FileCode2, MessageSquare, Plus, ChevronRight, X, ExternalLink,
   CodeXml, Check, Briefcase, RefreshCw, Terminal, PhoneCall,
-  BookOpen, Search
+  BookOpen, Search, UploadCloud, Paperclip, Crown, Phone, UserCheck, MessageCircle
 } from 'lucide-react';
-import { Store, Ticket, TicketReply } from '../data/mockData';
+import { Store, Ticket, TicketReply, TicketAttachment } from '../types';
+import {
+  TerminalConsole,
+  TicketAttachmentManager,
+  TicketAttachmentViewer
+} from '../components/TicketSupportWidgets';
 
 interface SupportPageProps {
   store: Store;
@@ -28,48 +33,7 @@ export type PlatformSuggestion = {
   date: string;
 };
 
-const INITIAL_SUGGESTIONS: PlatformSuggestion[] = [
-  {
-    id: 'sug-1',
-    category: 'أدوات المطورين',
-    title: 'ربط مباشر مع مستودعات GitHub لعرض المشاريع المكتملة تلقائيًا',
-    description: 'تمكين المطور من مزامنة المشاريع العامة من حسابه على غيتهاب مع إبراز لغات البرمجة وحجم المساهمات لتسهيل التحقق على أصحاب المشاريع.',
-    author: 'أحمد السعدي',
-    votes: 49,
-    status: 'مقبول وقيد التطوير',
-    date: 'منذ يومين',
-  },
-  {
-    id: 'sug-2',
-    category: 'معيار FQS',
-    title: 'إضافة اختبارات متخصصة في الذكاء الاصطناعي وهندسة RAG ضمن معيار FQS',
-    description: 'مع تزايد الطلب على مهندسي الذكاء الاصطناعي، نقترح وضع تحديات لتقييم كفاءة استرجاع السياق وهندسة النماذج اللغوية الكبيرة.',
-    author: 'ليان العتيبي',
-    votes: 36,
-    status: 'قيد الدراسة',
-    date: 'منذ 3 أيام',
-  },
-  {
-    id: 'sug-3',
-    category: 'تحسين واجهة',
-    title: 'دعم الوضع المظلم (Dark Mode) الكامل للوحة تحكم المطور',
-    description: 'توفير ثيم داكن مريح للعين عند تصفح الكود والمشاريع ومتابعة تفاصيل المهام في بيئة عمل المطور.',
-    author: 'عمر المطيري',
-    votes: 63,
-    status: 'تم تنفيذه بنجاح',
-    date: 'منذ أسبوع',
-  },
-  {
-    id: 'sug-4',
-    category: 'ميزة برمجية',
-    title: 'إنشاء مجتمع نقاش تقني مفتوح وغرف نقاش صوتية برمجية أسبوعية',
-    description: 'مساحة للمبرمجين العرب من كل مكان لتبادل الخبرات ومراجعة المعماريات البرمجية وحل التحديات الهندسية المعقدة.',
-    author: 'سارة منصور',
-    votes: 42,
-    status: 'قيد الدراسة',
-    date: 'منذ أسبوعين',
-  },
-];
+const INITIAL_SUGGESTIONS: PlatformSuggestion[] = [];
 
 export function SupportPage({ store, update, notify }: SupportPageProps) {
   const [activeTab, setActiveTab] = useState<'tickets' | 'suggestions' | 'channels'>('tickets');
@@ -85,6 +49,8 @@ export function SupportPage({ store, update, notify }: SupportPageProps) {
   const [newReplyMessage, setNewReplyMessage] = useState('');
   const [newReplyCode, setNewReplyCode] = useState('');
   const [showReplyCodeInput, setShowReplyCodeInput] = useState(false);
+  const [newReplyAttachments, setNewReplyAttachments] = useState<TicketAttachment[]>([]);
+  const [showReplyAttachmentManager, setShowReplyAttachmentManager] = useState(false);
 
   // New Ticket Form Modal State
   const [showNewTicketModal, setShowNewTicketModal] = useState(false);
@@ -95,6 +61,52 @@ export function SupportPage({ store, update, notify }: SupportPageProps) {
   const [newTicketDetails, setNewTicketDetails] = useState('');
   const [newTicketLogs, setNewTicketLogs] = useState('');
   const [newTicketSender, setNewTicketSender] = useState('');
+  const [newTicketAttachments, setNewTicketAttachments] = useState<TicketAttachment[]>([]);
+
+  // Direct Communication to Owner & Admin Form State
+  const [directTarget, setDirectTarget] = useState<'owner' | 'admin' | 'both'>('owner');
+  const [directCategory, setDirectCategory] = useState<string>('استفسار هندسي وشراكات مؤسسية');
+  const [directSender, setDirectSender] = useState(store.currentUser?.name || '');
+  const [directEmail, setDirectEmail] = useState(store.currentUser?.email || '');
+  const [directPhone, setDirectPhone] = useState(store.currentUser?.phone || '');
+  const [directSubject, setDirectSubject] = useState('');
+  const [directMessage, setDirectMessage] = useState('');
+  const [directPriority, setDirectPriority] = useState<Ticket['priority']>('عالي');
+  const [directAttachments, setDirectAttachments] = useState<TicketAttachment[]>([]);
+  const [directSending, setDirectSending] = useState(false);
+  const [directSuccess, setDirectSuccess] = useState(false);
+
+  // Sync sender info when currentUser changes
+  useEffect(() => {
+    if (store.currentUser) {
+      if (!directSender) setDirectSender(store.currentUser.name);
+      if (!directEmail) setDirectEmail(store.currentUser.email);
+      if (!directPhone && store.currentUser.phone) setDirectPhone(store.currentUser.phone);
+    }
+  }, [store.currentUser]);
+
+  const searchStr = useSearch();
+
+  // Handle URL query parameters (e.g. ?template=sla or ?tab=tickets)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(searchStr);
+      const tab = params.get('tab');
+      if (tab === 'tickets' || tab === 'suggestions' || tab === 'channels') {
+        setActiveTab(tab);
+      }
+      const template = params.get('template');
+      if (template === 'sla') {
+        setActiveTab('tickets');
+        setCategoryFilter('دعم مستمر بعد التسليم');
+        setShowNewTicketModal(true);
+        setNewTicketCategory('دعم مستمر بعد التسليم');
+        setNewTicketPriority('عالي');
+        setNewTicketSubject('طلب صيانة مستمرة ودعم فني وفق اتفاقية مستوى الخدمة (SLA)');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } catch {}
+  }, [searchStr]);
 
   // Suggestions state
   const [suggestions, setSuggestions] = useState<PlatformSuggestion[]>(() => {
@@ -155,6 +167,7 @@ export function SupportPage({ store, update, notify }: SupportPageProps) {
       slaResponseHours: slaMap[newTicketPriority] || 12,
       replies: [newTicketDetails.trim()],
       logsOrCode: newTicketLogs.trim() || undefined,
+      attachments: newTicketAttachments.length > 0 ? newTicketAttachments : undefined,
       messages: [
         {
           id: 'msg-' + Date.now(),
@@ -173,45 +186,112 @@ export function SupportPage({ store, update, notify }: SupportPageProps) {
     setNewTicketSubject('');
     setNewTicketDetails('');
     setNewTicketLogs('');
+    setNewTicketAttachments([]);
     setShowNewTicketModal(false);
     notify('تم فتح تذكرة الدعم بنجاح وإرسال إشعار للمطور المسؤول');
   };
 
+  // Handle Direct Message to Owner & Admin Submit
+  const handleSendDirectMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!directSubject.trim() || !directMessage.trim() || !directSender.trim() || !directEmail.trim()) {
+      notify('يرجى ملء جميع الحقول المطلوبة (الاسم، البريد الإلكتروني، عنوان الرسالة، والمحتوى)');
+      return;
+    }
+
+    setDirectSending(true);
+
+    const targetLabel = directTarget === 'owner'
+      ? 'مالك المنصة التنفيذي (مينا روبير)'
+      : directTarget === 'admin'
+      ? 'الإدارة والرقابة الهندسية'
+      : 'المالك والإدارة معاً';
+
+    const newTicket: Ticket = {
+      id: 'dir-' + Math.random().toString(36).substring(2, 8),
+      subject: directSubject.trim(),
+      category: `مراسلة مباشرة (${targetLabel})`,
+      priority: directPriority,
+      status: 'مفتوح',
+      owner: directSender.trim(),
+      senderEmail: directEmail.trim(),
+      senderPhone: directPhone.trim() || undefined,
+      targetAudience: directTarget,
+      projectTitle: directCategory,
+      createdAt: 'الآن',
+      slaResponseHours: 4,
+      replies: [directMessage.trim()],
+      messages: [
+        {
+          id: 'rep-' + Date.now(),
+          sender: directSender.trim(),
+          senderRole: 'client',
+          message: directMessage.trim(),
+          createdAt: 'الآن',
+        }
+      ],
+      attachments: directAttachments.length > 0 ? directAttachments : undefined,
+    };
+
+    update('tickets', [newTicket, ...store.tickets]);
+
+    setTimeout(() => {
+      setDirectSending(false);
+      setDirectSuccess(true);
+      setDirectSubject('');
+      setDirectMessage('');
+      setDirectAttachments([]);
+      notify(`تم إرسال رسالتك بنجاح إلى ${targetLabel}! ستظهر في لوحة تحكم الإدارة والمالك فوراً.`);
+    }, 300);
+  };
+
   // Add reply to ticket
   const handleAddReply = (ticketId: string) => {
-    if (!newReplyMessage.trim()) return;
+    if (!newReplyMessage.trim() && newReplyAttachments.length === 0 && !newReplyCode.trim()) return;
 
     const newReplyItem: TicketReply = {
       id: 'rep-' + Date.now(),
-      sender: 'فريق الدعم الفني',
-      senderRole: 'support',
-      message: newReplyMessage.trim(),
+      sender: store.currentUser?.name || 'فريق الدعم الفني',
+      senderRole: store.currentUser?.role === 'developer' ? 'developer' : store.currentUser?.role === 'client' ? 'client' : 'support',
+      message: newReplyMessage.trim() || 'تم إرفاق ملفات وتحديثات تقنية على التذكرة.',
       createdAt: 'الآن',
       codeSnippet: newReplyCode.trim() || undefined,
+      attachments: newReplyAttachments.length > 0 ? newReplyAttachments : undefined,
     };
 
     const updated = store.tickets.map((t) => {
       if (t.id === ticketId) {
         const msgs = t.messages ? [...t.messages, newReplyItem] : [newReplyItem];
+        const combinedAttachments = [...(t.attachments || []), ...newReplyAttachments];
         return {
           ...t,
           status: t.status === 'مفتوح' ? 'قيد المعالجة' : t.status,
-          replies: [...(t.replies || []), newReplyMessage.trim()],
+          replies: [...(t.replies || []), newReplyMessage.trim() || 'إرفاق ملفات'],
           messages: msgs,
+          attachments: combinedAttachments.length > 0 ? combinedAttachments : undefined,
         };
       }
       return t;
     });
 
     update('tickets', updated);
-    setSelectedTicket((prev) =>
-      prev ? { ...prev, status: prev.status === 'مفتوح' ? 'قيد المعالجة' : prev.status, messages: [...(prev.messages || []), newReplyItem] } : null
-    );
+    setSelectedTicket((prev) => {
+      if (!prev) return null;
+      const combinedAttachments = [...(prev.attachments || []), ...newReplyAttachments];
+      return {
+        ...prev,
+        status: prev.status === 'مفتوح' ? 'قيد المعالجة' : prev.status,
+        messages: [...(prev.messages || []), newReplyItem],
+        attachments: combinedAttachments.length > 0 ? combinedAttachments : undefined,
+      };
+    });
 
     setNewReplyMessage('');
     setNewReplyCode('');
+    setNewReplyAttachments([]);
     setShowReplyCodeInput(false);
-    notify('تم إرسال الرد وتحديث التذكرة بنجاح');
+    setShowReplyAttachmentManager(false);
+    notify('تم إرسال الرد والمرفقات وتحديث التذكرة بنجاح');
   };
 
   // Update ticket status
@@ -472,9 +552,20 @@ export function SupportPage({ store, update, notify }: SupportPageProps) {
                         <span className={`rounded-xl border px-2.5 py-0.5 text-[10px] font-black ${statusStyles}`}>
                           {ticket.status}
                         </span>
-                        <span className="rounded-xl bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-600">
+                        <span className="rounded-xl bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                           {ticket.category}
                         </span>
+                        {ticket.logsOrCode && (
+                          <span className="inline-flex items-center gap-1 rounded-xl border border-slate-700/80 bg-slate-900 px-2.5 py-0.5 text-[9px] font-mono font-bold text-emerald-400">
+                            <Terminal size={10} className="text-cyan-400" />
+                            <span>Terminal Log</span>
+                          </span>
+                        )}
+                        {ticket.attachments && ticket.attachments.length > 0 && (
+                          <span className="inline-flex items-center gap-1 rounded-xl border border-teal-500/30 bg-teal-50/80 px-2.5 py-0.5 text-[9px] font-bold text-teal-700 dark:bg-teal-950/40 dark:text-teal-300">
+                            <span>📎 {ticket.attachments.length} مرفقات</span>
+                          </span>
+                        )}
                       </div>
 
                       <h3 className="text-sm font-black text-[#152e46]">
@@ -659,43 +750,255 @@ export function SupportPage({ store, update, notify }: SupportPageProps) {
 
       {/* TAB 3: DIRECT CONTACT CHANNELS */}
       {activeTab === 'channels' && (
-        <div className="grid gap-6 md:grid-cols-3">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
-            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#eaf7f8] text-[#1c848c]">
-              <Mail size={24} />
-            </div>
-            <h4 className="mt-4 text-sm font-black text-[#152e46]">البريد التقني المباشر</h4>
-            <p className="mt-1 text-xs text-slate-500">
-              للاستفسارات الهندسية والشراكات المؤسسية وعقود المشاريع الخاصة
-            </p>
-            <div className="mt-4 rounded-xl bg-slate-50 p-2.5 text-center font-mono text-xs font-bold text-slate-700" dir="ltr">
-              support@futech-platform.com
-            </div>
-          </div>
+        <div className="space-y-8">
+          {/* Form: Direct Communication with Owner & Administration */}
+          <div className="relative overflow-hidden rounded-[32px] border border-slate-200/90 bg-white p-6 shadow-xl sm:p-8 dark:border-slate-800 dark:bg-[#0c1524]">
+            {/* Ambient Background Accent */}
+            <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-teal-500/10 blur-3xl" />
+            <div className="pointer-events-none absolute -left-24 -bottom-24 h-64 w-64 rounded-full bg-amber-500/10 blur-3xl" />
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
-            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#edf4fb] text-[#2f66aa]">
-              <MessageSquare size={24} />
-            </div>
-            <h4 className="mt-4 text-sm font-black text-[#152e46]">مجتمع المبرمجين على تليجرام</h4>
-            <p className="mt-1 text-xs text-slate-500">
-              قناة نقاش مفتوحة لتبادل الخبرات والحلول البرمجية مع نخبة المهندسين
-            </p>
-            <div className="mt-4 rounded-xl bg-slate-50 p-2.5 text-center font-mono text-xs font-bold text-slate-700" dir="ltr">
-              @FuTechArabDevelopers
-            </div>
-          </div>
+            <div className="relative z-10">
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-5 dark:border-slate-800">
+                <div>
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-teal-500/20 bg-teal-500/10 px-3 py-1 text-xs font-black text-teal-700 dark:text-teal-300">
+                    <Sparkles size={13} className="text-teal-500" />
+                    <span>قناة الاتصال المباشر الفوري</span>
+                  </div>
+                  <h3 className="mt-2 text-lg font-black text-slate-900 sm:text-xl dark:text-white">
+                    نموذج المراسلة المباشرة مع المالك أو الإدارة
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    أرسل رسالتك، استفسارك، شراكتك، أو ملاحظاتك مباشرة لتصل فوراً إلى لوحة تحكم المالك ولوحة الإدارة والرقابة.
+                  </p>
+                </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
-            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#f2eefb] text-[#6a42b0]">
-              <ShieldCheck size={24} />
-            </div>
-            <h4 className="mt-4 text-sm font-black text-[#152e46]">فحص معيار FQS والاعتماد</h4>
-            <p className="mt-1 text-xs text-slate-500">
-              مراجعة تقييم المطورين وفحص حالات الاختبار واعتماد الشارة الموثوقة
-            </p>
-            <div className="mt-4 rounded-xl bg-slate-50 p-2.5 text-center text-xs font-bold text-purple-700">
-              فريق مراجعة الجودة الهندسية
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+                  <Clock size={14} className="text-teal-500" />
+                  <span>زمن الرد المتوقع: أقل من ساعتين</span>
+                </div>
+              </div>
+
+              {directSuccess && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-6 flex items-center justify-between rounded-2xl border border-emerald-500/30 bg-emerald-50 p-4 text-xs font-bold text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-950/40 dark:text-emerald-300"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <CheckCircle2 size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span>
+                      تم استلام رسالتك وإرسالها فورياً إلى لوحة التحكم! شكراً لتواصلك معنا وسيتواصل معك الفريق في أقرب وقت.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDirectSuccess(false)}
+                    className="rounded-lg p-1 text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/60"
+                  >
+                    <X size={15} />
+                  </button>
+                </motion.div>
+              )}
+
+              <form onSubmit={handleSendDirectMessage} className="mt-6 space-y-6">
+                {/* 1. Target Selector (الجهة المستلمة) */}
+                <div>
+                  <label className="block text-xs font-black text-slate-800 dark:text-slate-200">
+                    توجيه الرسالة إلى: <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="mt-2 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+                    <button
+                      type="button"
+                      onClick={() => setDirectTarget('owner')}
+                      className={`flex items-center justify-center gap-2 rounded-2xl border p-3.5 text-xs font-black transition-all ${
+                        directTarget === 'owner'
+                          ? 'border-amber-500 bg-amber-50/70 text-amber-900 shadow-sm ring-2 ring-amber-500/20 dark:border-amber-500/50 dark:bg-amber-950/40 dark:text-amber-300'
+                          : 'border-slate-200 bg-slate-50/60 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400'
+                      }`}
+                    >
+                      <Crown size={16} className={directTarget === 'owner' ? 'text-amber-500' : 'text-slate-400'} />
+                      <span>مالك المنصة التنفيذي (مينا روبير)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDirectTarget('admin')}
+                      className={`flex items-center justify-center gap-2 rounded-2xl border p-3.5 text-xs font-black transition-all ${
+                        directTarget === 'admin'
+                          ? 'border-indigo-500 bg-indigo-50/70 text-indigo-900 shadow-sm ring-2 ring-indigo-500/20 dark:border-indigo-500/50 dark:bg-indigo-950/40 dark:text-indigo-300'
+                          : 'border-slate-200 bg-slate-50/60 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400'
+                      }`}
+                    >
+                      <ShieldCheck size={16} className={directTarget === 'admin' ? 'text-indigo-500' : 'text-slate-400'} />
+                      <span>الإدارة والرقابة الهندسية</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDirectTarget('both')}
+                      className={`flex items-center justify-center gap-2 rounded-2xl border p-3.5 text-xs font-black transition-all ${
+                        directTarget === 'both'
+                          ? 'border-teal-500 bg-teal-50/70 text-teal-900 shadow-sm ring-2 ring-teal-500/20 dark:border-teal-500/50 dark:bg-teal-950/40 dark:text-teal-300'
+                          : 'border-slate-200 bg-slate-50/60 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400'
+                      }`}
+                    >
+                      <Sparkles size={16} className={directTarget === 'both' ? 'text-teal-500' : 'text-slate-400'} />
+                      <span>المالك والإدارة معاً</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. Category & Priority */}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-black text-slate-800 dark:text-slate-200">
+                      تصنيف وموضوع المراسلة
+                    </label>
+                    <select
+                      value={directCategory}
+                      onChange={(e) => setDirectCategory(e.target.value)}
+                      className="mt-1.5 h-11 w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-3.5 text-xs font-bold text-slate-900 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-900/60 dark:text-white"
+                    >
+                      <option value="استفسار هندسي وشراكات مؤسسية">استفسار هندسي وشراكات مؤسسية</option>
+                      <option value="عقود مشاريع خاصة واستثمار">عقود مشاريع خاصة واستثمار</option>
+                      <option value="فحص معيار FQS والاعتماد">فحص معيار FQS والاعتماد</option>
+                      <option value="طلب تدخل إداري أو حل نزاع">طلب تدخل إداري أو حل نزاع</option>
+                      <option value="مقترح لتطوير المنصة">مقترح لتطوير المنصة</option>
+                      <option value="رسالة خاصة ومباشرة للمالك">رسالة خاصة ومباشرة للمالك</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black text-slate-800 dark:text-slate-200">
+                      مستوى الأهمية والاستعجال
+                    </label>
+                    <div className="mt-1.5 flex gap-2">
+                      {[
+                        { id: 'حرج', label: 'حرج وعاجل', color: 'text-rose-600 border-rose-300 bg-rose-50/60 dark:bg-rose-950/40' },
+                        { id: 'عالي', label: 'أولوية عالية', color: 'text-amber-600 border-amber-300 bg-amber-50/60 dark:bg-amber-950/40' },
+                        { id: 'متوسط', label: 'عادي / متوسط', color: 'text-teal-600 border-teal-300 bg-teal-50/60 dark:bg-teal-950/40' },
+                      ].map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => setDirectPriority(p.id as any)}
+                          className={`flex-1 rounded-xl border py-2.5 text-xs font-black transition ${
+                            directPriority === p.id
+                              ? `${p.color} ring-2 ring-teal-500/20 shadow-xs font-black`
+                              : 'border-slate-200 bg-slate-50/60 text-slate-500 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-400'
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Sender Info: Name, Email, Phone */}
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div>
+                    <label className="block text-xs font-black text-slate-800 dark:text-slate-200">
+                      اسم المرسل أو الجهة <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={directSender}
+                      onChange={(e) => setDirectSender(e.target.value)}
+                      placeholder="مثال: م. أحمد عبد العزيز / شركة التقنية"
+                      className="mt-1.5 h-11 w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-3.5 text-xs font-bold text-slate-900 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-900/60 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black text-slate-800 dark:text-slate-200">
+                      البريد الإلكتروني للرد <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={directEmail}
+                      onChange={(e) => setDirectEmail(e.target.value)}
+                      placeholder="name@company.com"
+                      className="mt-1.5 h-11 w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-3.5 text-xs font-bold text-slate-900 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-900/60 dark:text-white"
+                      dir="ltr"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black text-slate-800 dark:text-slate-200">
+                      رقم الهاتف / الواتساب (اختياري)
+                    </label>
+                    <input
+                      type="tel"
+                      value={directPhone}
+                      onChange={(e) => setDirectPhone(e.target.value)}
+                      placeholder="+966 5x xxx xxxx / +20 1x xxx xxxx"
+                      className="mt-1.5 h-11 w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-3.5 text-xs font-bold text-slate-900 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-900/60 dark:text-white"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+
+                {/* 4. Subject */}
+                <div>
+                  <label className="block text-xs font-black text-slate-800 dark:text-slate-200">
+                    عنوان الرسالة أو المراسلة <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={directSubject}
+                    onChange={(e) => setDirectSubject(e.target.value)}
+                    placeholder="مثال: طلب شراكة تقنية لتنفيذ منصة سحابية كبرى أو اعتماد فحص FQS"
+                    className="mt-1.5 h-11 w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-3.5 text-xs font-bold text-slate-900 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-900/60 dark:text-white"
+                  />
+                </div>
+
+                {/* 5. Detailed Message */}
+                <div>
+                  <label className="block text-xs font-black text-slate-800 dark:text-slate-200">
+                    تفاصيل الرسالة أو الاستفسار بالتفصيل <span className="text-rose-500">*</span>
+                  </label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={directMessage}
+                    onChange={(e) => setDirectMessage(e.target.value)}
+                    placeholder="اكتب رسالتك هنا بكل حرية، اذكر كافة المتطلبات الهندسية، تفاصيل المشروع، أو أي استفسار ترغب بتوجيهه للمالك أو الإدارة..."
+                    className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-slate-50/60 p-4 text-xs font-medium leading-relaxed text-slate-900 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-900/60 dark:text-white"
+                  />
+                </div>
+
+                {/* 6. Media & File Attachments */}
+                <div>
+                  <label className="mb-2 block text-xs font-black text-slate-800 dark:text-slate-200">
+                    مرفقات ومستندات داعمة (صور، ملفات PDF، وثائق هندسية - اختياري)
+                  </label>
+                  <TicketAttachmentManager
+                    attachments={directAttachments}
+                    onChange={setDirectAttachments}
+                  />
+                </div>
+
+                {/* Submit Bar */}
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5 dark:border-slate-800">
+                  <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                    <ShieldCheck size={14} className="text-teal-500" />
+                    <span>مراسلة آمنة ومشفرة، وتظهر مباشرة في لوحة القيادة التنفيذية</span>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={directSending}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#14293f] via-[#1b3957] to-[#1e4368] px-8 py-3 text-xs font-black text-white shadow-lg shadow-[#14293f]/20 transition hover:brightness-105 active:scale-95 disabled:opacity-50 dark:from-teal-600 dark:via-teal-500 dark:to-cyan-500 dark:text-slate-950"
+                  >
+                    <Send size={15} />
+                    <span>{directSending ? 'جاري الإرسال الفوري...' : 'إرسال الرسالة إلى لوحة التحكم فوراً'}</span>
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
@@ -713,23 +1016,23 @@ export function SupportPage({ store, update, notify }: SupportPageProps) {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl max-h-[90vh] flex flex-col"
+              className="w-full max-w-2xl rounded-3xl border border-slate-200/90 bg-white p-6 shadow-2xl max-h-[92vh] flex flex-col dark:border-slate-800 dark:bg-[#0c1524] dark:text-slate-100"
             >
               {/* Header */}
-              <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-start justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs font-bold text-slate-400">#{selectedTicket.id}</span>
-                    <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
+                    <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                       {selectedTicket.category}
                     </span>
-                    <span className="rounded-md bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-700">
+                    <span className="rounded-md bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
                       أولوية: {selectedTicket.priority}
                     </span>
                   </div>
-                  <h3 className="mt-2 text-base font-black text-[#152e46]">{selectedTicket.subject}</h3>
+                  <h3 className="mt-2 text-base font-black text-[#152e46] dark:text-white">{selectedTicket.subject}</h3>
                   {selectedTicket.projectTitle && (
-                    <div className="mt-1 text-xs font-bold text-[#1f456e]">
+                    <div className="mt-1 text-xs font-bold text-[#1f456e] dark:text-teal-300">
                       المشروع: {selectedTicket.projectTitle}
                     </div>
                   )}
@@ -737,15 +1040,15 @@ export function SupportPage({ store, update, notify }: SupportPageProps) {
 
                 <button
                   onClick={() => setSelectedTicket(null)}
-                  className="rounded-xl p-1 text-slate-400 hover:bg-slate-100"
+                  className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-white transition"
                 >
                   <X size={20} />
                 </button>
               </div>
 
               {/* Status Update Quick Bar */}
-              <div className="flex items-center justify-between border-b border-slate-100 py-3 text-xs">
-                <span className="text-slate-500">حالة التذكرة الحالية:</span>
+              <div className="flex items-center justify-between border-b border-slate-100 py-3 text-xs dark:border-slate-800">
+                <span className="text-slate-500 dark:text-slate-400">حالة التذكرة الحالية:</span>
                 <div className="flex items-center gap-1.5">
                   {(['مفتوح', 'قيد المعالجة', 'تم الحل', 'مغلق'] as Ticket['status'][]).map((st) => (
                     <button
@@ -753,8 +1056,8 @@ export function SupportPage({ store, update, notify }: SupportPageProps) {
                       onClick={() => handleUpdateStatus(selectedTicket.id, st)}
                       className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${
                         selectedTicket.status === st
-                          ? 'bg-[#203d62] text-white'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          ? 'bg-[#203d62] text-white shadow-xs dark:bg-teal-600 dark:text-slate-950'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
                       }`}
                     >
                       {st}
@@ -765,11 +1068,24 @@ export function SupportPage({ store, update, notify }: SupportPageProps) {
 
               {/* Messages & Timeline Body */}
               <div className="flex-1 overflow-y-auto py-4 space-y-4">
+                {/* Terminal Console View for Error Logs */}
                 {selectedTicket.logsOrCode && (
-                  <div className="rounded-2xl border border-slate-800 bg-[#0d1e2e] p-3 text-xs font-mono text-emerald-300">
-                    <div className="mb-1 text-[10px] text-slate-400">سجل الخطأ أو الشيفرة المرفقة:</div>
-                    <pre className="overflow-x-auto whitespace-pre-wrap">{selectedTicket.logsOrCode}</pre>
+                  <div className="space-y-1.5">
+                    <div className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <Terminal size={14} className="text-teal-500" />
+                      <span>سجل الخطأ والشيفرة المرفقة (محاكي الـ Terminal):</span>
+                    </div>
+                    <TerminalConsole
+                      value={selectedTicket.logsOrCode}
+                      readOnly
+                      title={`stderr.log • ${selectedTicket.subject}`}
+                    />
                   </div>
+                )}
+
+                {/* Attachments Viewer (Images, Videos, Files) */}
+                {selectedTicket.attachments && selectedTicket.attachments.length > 0 && (
+                  <TicketAttachmentViewer attachments={selectedTicket.attachments} />
                 )}
 
                 {selectedTicket.messages && selectedTicket.messages.length > 0 ? (
@@ -780,21 +1096,26 @@ export function SupportPage({ store, update, notify }: SupportPageProps) {
                         key={msg.id}
                         className={`rounded-2xl p-4 text-xs leading-relaxed ${
                           isClient
-                            ? 'bg-[#f4f7fb] border border-slate-200/80 mr-4'
-                            : 'bg-[#eaf6f7] border border-[#c3e7e9] ml-4'
+                            ? 'bg-[#f4f7fb] border border-slate-200/80 mr-4 dark:bg-slate-900/60 dark:border-slate-800'
+                            : 'bg-[#eaf6f7] border border-[#c3e7e9] ml-4 dark:bg-teal-950/25 dark:border-teal-800/60'
                         }`}
                       >
-                        <div className="flex items-center justify-between font-bold text-slate-600 mb-1.5">
-                          <span className={isClient ? 'text-slate-800' : 'text-[#19777f]'}>
+                        <div className="flex items-center justify-between font-bold text-slate-600 mb-1.5 dark:text-slate-300">
+                          <span className={isClient ? 'text-slate-800 dark:text-white' : 'text-[#19777f] dark:text-teal-300'}>
                             {msg.sender} {isClient ? '(صاحب الطلب)' : '(المطور / الدعم)'}
                           </span>
                           <span className="text-[10px] text-slate-400">{msg.createdAt}</span>
                         </div>
-                        <p className="text-slate-700">{msg.message}</p>
+                        <p className="text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">{msg.message}</p>
                         {msg.codeSnippet && (
-                          <pre className="mt-2 rounded-xl bg-[#0f2132] p-3 font-mono text-[11px] text-emerald-300 overflow-x-auto">
-                            <code>{msg.codeSnippet}</code>
-                          </pre>
+                          <div className="mt-2.5">
+                            <TerminalConsole value={msg.codeSnippet} readOnly title={`snippet • ${msg.sender}`} maxHeight="200px" />
+                          </div>
+                        )}
+                        {msg.attachments && msg.attachments.length > 0 && (
+                          <div className="mt-2.5">
+                            <TicketAttachmentViewer attachments={msg.attachments} />
+                          </div>
                         )}
                       </div>
                     );
@@ -802,7 +1123,7 @@ export function SupportPage({ store, update, notify }: SupportPageProps) {
                 ) : (
                   <div className="space-y-2">
                     {selectedTicket.replies?.map((r, i) => (
-                      <div key={i} className="rounded-2xl bg-slate-50 p-3 text-xs text-slate-700">
+                      <div key={i} className="rounded-2xl bg-slate-50 p-3.5 text-xs text-slate-700 dark:bg-slate-900/60 dark:text-slate-200 border border-slate-100 dark:border-slate-800">
                         {typeof r === 'string' ? r : r.message}
                       </div>
                     ))}
@@ -811,42 +1132,113 @@ export function SupportPage({ store, update, notify }: SupportPageProps) {
               </div>
 
               {/* Reply Input Box */}
-              <div className="border-t border-slate-100 pt-4 space-y-2">
+              <div className="border-t border-slate-100 pt-4 space-y-2.5 dark:border-slate-800">
                 <div className="flex gap-2">
-                  <textarea
-                    rows={2}
-                    value={newReplyMessage}
-                    onChange={(e) => setNewReplyMessage(e.target.value)}
-                    placeholder="اكتب ردك أو تقرير الصيانة هنا..."
-                    className="flex-1 resize-none rounded-xl border border-slate-200 p-3 text-xs outline-none focus:border-[#2ba6ae]"
-                  />
+                  <div className="relative flex-1">
+                    <textarea
+                      rows={2}
+                      value={newReplyMessage}
+                      onChange={(e) => setNewReplyMessage(e.target.value)}
+                      placeholder="اكتب ردك أو تقرير الصيانة والمتابعة هنا..."
+                      className="w-full resize-none rounded-2xl border border-slate-200 p-3 pe-16 text-xs outline-none focus:border-[#2ba6ae] dark:border-slate-700 dark:bg-slate-900/70 dark:text-white dark:focus:border-teal-400"
+                    />
+                    {/* Quick action buttons inside textarea */}
+                    <div className="absolute left-2.5 bottom-2.5 flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowReplyAttachmentManager(!showReplyAttachmentManager)}
+                        className={`rounded-lg p-1.5 transition ${
+                          newReplyAttachments.length > 0 || showReplyAttachmentManager
+                            ? 'bg-teal-500/20 text-teal-600 dark:text-teal-300'
+                            : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800'
+                        }`}
+                        title="إرفاق صور أو فيديوهات أو ملفات"
+                      >
+                        <UploadCloud size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowReplyCodeInput(!showReplyCodeInput)}
+                        className={`rounded-lg p-1.5 transition ${
+                          newReplyCode || showReplyCodeInput
+                            ? 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-300'
+                            : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800'
+                        }`}
+                        title="إرفاق شيفرة برمجية عبر الـ Terminal"
+                      >
+                        <Terminal size={15} />
+                      </button>
+                    </div>
+                  </div>
+
                   <button
                     onClick={() => handleAddReply(selectedTicket.id)}
-                    className="flex items-center justify-center rounded-xl bg-[#203d62] px-5 text-xs font-black text-white hover:bg-[#2c5383] active:scale-95"
+                    className="flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-r from-teal-600 to-cyan-600 px-5 text-xs font-black text-white shadow-md shadow-teal-600/20 hover:opacity-95 active:scale-95 transition"
+                    title="إرسال الرد والمرفقات"
                   >
-                    <Send size={15} />
+                    <Send size={16} />
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between text-[11px]">
-                  <button
-                    onClick={() => setShowReplyCodeInput(!showReplyCodeInput)}
-                    className="flex items-center gap-1 text-[#218c94] hover:underline"
-                  >
-                    <CodeXml size={13} />
-                    <span>{showReplyCodeInput ? 'إخفاء حقل الشيفرة' : 'إرفاق شيفرة أو سجل خطأ'}</span>
-                  </button>
-                  <span className="text-slate-400">زمن الاستجابة وفق عقد الدعم: {selectedTicket.slaResponseHours || 12} ساعة</span>
+                <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowReplyAttachmentManager(!showReplyAttachmentManager)}
+                      className="flex items-center gap-1.5 font-bold text-teal-700 hover:underline dark:text-teal-400"
+                    >
+                      <UploadCloud size={14} />
+                      <span>
+                        {showReplyAttachmentManager
+                          ? 'إخفاء مدير المرفقات'
+                          : `إرفاق صور وفيديوهات وملفات ${newReplyAttachments.length > 0 ? `(${newReplyAttachments.length})` : ''}`}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowReplyCodeInput(!showReplyCodeInput)}
+                      className="flex items-center gap-1.5 font-bold text-[#1f6d7a] hover:underline dark:text-cyan-400"
+                    >
+                      <Terminal size={14} />
+                      <span>{showReplyCodeInput ? 'إخفاء محاكي الـ Terminal' : 'إرفاق شيفرة عبر Terminal'}</span>
+                    </button>
+                  </div>
+
+                  <span className="text-slate-400">
+                    زمن الاستجابة وفق عقد الدعم: {selectedTicket.slaResponseHours || 12} ساعة
+                  </span>
                 </div>
 
+                {/* Collapsible Attachment Manager */}
+                {showReplyAttachmentManager && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="pt-2"
+                  >
+                    <TicketAttachmentManager
+                      attachments={newReplyAttachments}
+                      onChange={setNewReplyAttachments}
+                    />
+                  </motion.div>
+                )}
+
+                {/* Collapsible Terminal Console */}
                 {showReplyCodeInput && (
-                  <textarea
-                    rows={3}
-                    value={newReplyCode}
-                    onChange={(e) => setNewReplyCode(e.target.value)}
-                    placeholder="// الصق كود الإصلاح أو سجلات الخطأ هنا..."
-                    className="w-full font-mono rounded-xl border border-slate-200 bg-slate-900 p-2.5 text-xs text-emerald-300 outline-none"
-                  />
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="pt-2"
+                  >
+                    <TerminalConsole
+                      value={newReplyCode}
+                      onChange={setNewReplyCode}
+                      title="futech@reply-trace: ~ / patch-code.ts"
+                    />
+                  </motion.div>
                 )}
               </div>
             </motion.div>
@@ -866,16 +1258,16 @@ export function SupportPage({ store, update, notify }: SupportPageProps) {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
+              className="w-full max-w-2xl rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-7 shadow-2xl max-h-[92vh] overflow-y-auto dark:border-slate-800 dark:bg-[#0c1524] dark:text-slate-100"
             >
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
                 <div className="flex items-center gap-2">
                   <LifeBuoy size={18} className="text-[#259199]" />
-                  <h3 className="text-sm font-black text-[#152e46]">فتح تذكرة دعم أو صيانة مستمرة</h3>
+                  <h3 className="text-base font-black text-[#152e46] dark:text-white">فتح تذكرة دعم أو صيانة مستمرة</h3>
                 </div>
                 <button
                   onClick={() => setShowNewTicketModal(false)}
-                  className="rounded-xl p-1 text-slate-400 hover:bg-slate-100"
+                  className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-white transition"
                 >
                   <X size={18} />
                 </button>
@@ -883,11 +1275,11 @@ export function SupportPage({ store, update, notify }: SupportPageProps) {
 
               <form onSubmit={handleCreateTicket} className="mt-4 space-y-4 text-xs">
                 <div>
-                  <label className="block font-bold text-slate-700">المشروع المرتبط بالتذكرة *</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-200">المشروع المرتبط بالتذكرة *</label>
                   <select
                     value={newTicketProject}
                     onChange={(e) => setNewTicketProject(e.target.value)}
-                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-bold text-slate-700 outline-none focus:border-[#2ba6ae]"
+                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-bold text-slate-700 outline-none focus:border-[#2ba6ae] dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 dark:focus:border-teal-400"
                   >
                     {store.projects.map((p) => (
                       <option key={p.id} value={p.title}>
@@ -898,13 +1290,13 @@ export function SupportPage({ store, update, notify }: SupportPageProps) {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-bold text-slate-700">نوع الطلب *</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-200">نوع الطلب *</label>
                     <select
                       value={newTicketCategory}
                       onChange={(e) => setNewTicketCategory(e.target.value as any)}
-                      className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-bold text-slate-700 outline-none focus:border-[#2ba6ae]"
+                      className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-bold text-slate-700 outline-none focus:border-[#2ba6ae] dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 dark:focus:border-teal-400"
                     >
                       <option value="دعم مستمر بعد التسليم">دعم مستمر بعد التسليم</option>
                       <option value="صيانة دورية">صيانة دورية</option>
@@ -915,11 +1307,11 @@ export function SupportPage({ store, update, notify }: SupportPageProps) {
                   </div>
 
                   <div>
-                    <label className="block font-bold text-slate-700">الأولوية ومستوى الخدمة (SLA) *</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-200">الأولوية ومستوى الخدمة (SLA) *</label>
                     <select
                       value={newTicketPriority}
                       onChange={(e) => setNewTicketPriority(e.target.value as any)}
-                      className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-bold text-slate-700 outline-none focus:border-[#2ba6ae]"
+                      className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-bold text-slate-700 outline-none focus:border-[#2ba6ae] dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 dark:focus:border-teal-400"
                     >
                       <option value="حرج">حرج (استجابة خلال ساعتين)</option>
                       <option value="عالي">عالي (استجابة خلال 6 ساعات)</option>
@@ -930,61 +1322,77 @@ export function SupportPage({ store, update, notify }: SupportPageProps) {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700">عنوان التذكرة *</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-200">عنوان التذكرة *</label>
                   <input
                     required
                     value={newTicketSubject}
                     onChange={(e) => setNewTicketSubject(e.target.value)}
                     placeholder="مثال: تعطل مزامنة البيانات عبر الـ Webhook فجر اليوم"
-                    className="mt-1.5 w-full rounded-xl border border-slate-200 p-2.5 text-xs outline-none focus:border-[#2ba6ae]"
+                    className="mt-1.5 w-full rounded-xl border border-slate-200 p-2.5 text-xs outline-none focus:border-[#2ba6ae] dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 dark:focus:border-teal-400"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700">تفاصيل المشكلة والخطوات لإعادة إنتاجها *</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-200">تفاصيل المشكلة والخطوات لإعادة إنتاجها *</label>
                   <textarea
                     required
-                    rows={4}
+                    rows={3}
                     value={newTicketDetails}
                     onChange={(e) => setNewTicketDetails(e.target.value)}
                     placeholder="اشرح المشكلة التقنية بالتفصيل وما الذي تم تجربته..."
-                    className="mt-1.5 w-full resize-none rounded-xl border border-slate-200 p-2.5 text-xs leading-relaxed outline-none focus:border-[#2ba6ae]"
+                    className="mt-1.5 w-full resize-none rounded-xl border border-slate-200 p-2.5 text-xs leading-relaxed outline-none focus:border-[#2ba6ae] dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 dark:focus:border-teal-400"
                   />
                 </div>
 
+                {/* Terminal Console for Error Logs / Code */}
                 <div>
-                  <label className="block font-bold text-slate-700">سجل الخطأ أو الأكواد المرفقة (اختياري)</label>
-                  <textarea
-                    rows={3}
+                  <div className="mb-2 flex items-center justify-between">
+                    <label className="flex items-center gap-2 font-black text-slate-800 dark:text-white">
+                      <Terminal size={15} className="text-teal-600 dark:text-teal-400" />
+                      <span>سجل الخطأ أو الأكواد المرفقة (محاكي الـ Terminal)</span>
+                    </label>
+                    <span className="text-[10px] font-bold text-slate-400">اختياري • Shell Console</span>
+                  </div>
+                  <TerminalConsole
                     value={newTicketLogs}
-                    onChange={(e) => setNewTicketLogs(e.target.value)}
-                    placeholder="الصق رسائل الخطأ من الـ Console أو ملفات السيرفر..."
-                    className="mt-1.5 w-full font-mono rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-xs outline-none"
+                    onChange={setNewTicketLogs}
+                    title="futech@support-terminal: ~ / error-trace.log"
+                  />
+                </div>
+
+                {/* Media & File Attachments (Images, Videos, Files) */}
+                <div>
+                  <label className="mb-2 block font-black text-slate-800 dark:text-white">
+                    مرفقات الوسائط والملفات (صور، فيديوهات، وسجلات)
+                  </label>
+                  <TicketAttachmentManager
+                    attachments={newTicketAttachments}
+                    onChange={setNewTicketAttachments}
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700">اسم صاحب الطلب / الشركة *</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-200">اسم صاحب الطلب / الشركة *</label>
                   <input
                     required
                     value={newTicketSender}
                     onChange={(e) => setNewTicketSender(e.target.value)}
                     placeholder="مثال: شركة رفوف للتجارة"
-                    className="mt-1.5 w-full rounded-xl border border-slate-200 p-2.5 text-xs outline-none focus:border-[#2ba6ae]"
+                    className="mt-1.5 w-full rounded-xl border border-slate-200 p-2.5 text-xs outline-none focus:border-[#2ba6ae] dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 dark:focus:border-teal-400"
                   />
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                   <button
                     type="button"
                     onClick={() => setShowNewTicketModal(false)}
-                    className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
+                    className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition"
                   >
                     إلغاء
                   </button>
                   <button
                     type="submit"
-                    className="rounded-xl bg-[#203d62] px-6 py-2 text-xs font-black text-white hover:bg-[#2c5383] active:scale-95"
+                    className="rounded-xl bg-gradient-to-r from-teal-600 to-cyan-600 px-6 py-2.5 text-xs font-black text-white shadow-md shadow-teal-600/20 hover:opacity-95 active:scale-95 transition"
                   >
                     فتح التذكرة الآن
                   </button>

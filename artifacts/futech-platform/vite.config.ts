@@ -28,13 +28,54 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, 'dist/public'),
     emptyOutDir: true,
-    chunkSizeWarningLimit: 1200,
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-motion': ['framer-motion'],
-          'vendor-icons': ['lucide-react'],
+        manualChunks(id) {
+          const norm = id.replace(/\\/g, '/');
+          if (norm.includes('node_modules')) {
+            if (
+              norm.includes('/react@') ||
+              norm.includes('/react-dom@') ||
+              norm.includes('/scheduler@') ||
+              norm.includes('/react/') ||
+              norm.includes('/react-dom/')
+            ) {
+              return 'vendor-react';
+            }
+            if (norm.includes('@radix-ui')) {
+              return 'vendor-radix';
+            }
+            if (norm.includes('date-fns')) {
+              return 'vendor-date';
+            }
+            if (norm.includes('react-hook-form') || norm.includes('@hookform') || norm.includes('/zod')) {
+              return 'vendor-forms';
+            }
+            if (norm.includes('lucide-react')) {
+              return 'vendor-icons';
+            }
+            if (norm.includes('framer-motion')) {
+              return 'vendor-motion';
+            }
+            if (norm.includes('recharts') || norm.includes('d3-') || norm.includes('victory-vendor')) {
+              return 'vendor-charts';
+            }
+            if (norm.includes('@supabase')) {
+              return 'vendor-supabase';
+            }
+            if (norm.includes('wouter')) {
+              return 'vendor-wouter';
+            }
+            if (
+              norm.includes('cmdk') ||
+              norm.includes('vaul') ||
+              norm.includes('embla-carousel') ||
+              norm.includes('sonner')
+            ) {
+              return 'vendor-ui-extra';
+            }
+          }
         },
       },
     },

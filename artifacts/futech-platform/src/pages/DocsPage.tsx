@@ -1,12 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'wouter';
+import { Link, useSearch } from 'wouter';
 import {
   BookOpen, Search, CodeXml, Copy, Check, ShieldCheck, LifeBuoy,
   ChevronLeft, Clock, Tag, ExternalLink, ThumbsUp, ThumbsDown,
   Sparkles, Layers, ArrowLeft, Terminal, FileCode2, HeartHandshake, AlertCircle
 } from 'lucide-react';
-import { Store, Doc } from '../data/mockData';
+import { Store, Doc } from '../types';
 
 interface DocsPageProps {
   store: Store;
@@ -14,9 +14,57 @@ interface DocsPageProps {
 }
 
 export function DocsPage({ store, notify }: DocsPageProps) {
+  const searchStr = useSearch();
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [activeDocId, setActiveDocId] = useState<string>(store.docs[0]?.id || 'd-1');
+  const [activeDocId, setActiveDocId] = useState<string>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const paramId = params.get('id');
+      const paramTopic = params.get('topic');
+      if (paramId && store.docs.some((d) => d.id === paramId)) return paramId;
+      if (paramTopic) {
+        if (paramTopic.includes('owasp')) return 'd-6';
+        if (paramTopic.includes('fqs')) return 'd-1';
+        if (paramTopic.includes('git') || paramTopic.includes('github')) return 'd-3';
+        if (paramTopic.includes('sla') || paramTopic.includes('support')) return 'd-2';
+        if (paramTopic.includes('integrity') || paramTopic.includes('payment')) return 'd-7';
+      }
+    } catch {}
+    return store.docs[0]?.id || 'd-1';
+  });
+
+  // Sync URL search parameters dynamically on searchStr change
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(searchStr);
+      const paramId = params.get('id');
+      const paramTopic = params.get('topic');
+
+      let targetId: string | null = null;
+      if (paramId && store.docs.some((d) => d.id === paramId)) {
+        targetId = paramId;
+      } else if (paramTopic) {
+        if (paramTopic.includes('owasp')) targetId = 'd-6';
+        else if (paramTopic.includes('fqs')) targetId = 'd-1';
+        else if (paramTopic.includes('git') || paramTopic.includes('github')) targetId = 'd-3';
+        else if (paramTopic.includes('sla') || paramTopic.includes('support')) targetId = 'd-2';
+        else if (paramTopic.includes('integrity') || paramTopic.includes('payment')) targetId = 'd-7';
+      }
+
+      if (targetId) {
+        setActiveDocId(targetId);
+        setSelectedCategory('all');
+        setSearch('');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      const q = params.get('q') || params.get('search');
+      if (q) setSearch(q);
+      const cat = params.get('cat') || params.get('category');
+      if (cat) setSelectedCategory(cat);
+    } catch {}
+  }, [searchStr, store.docs]);
   const [copiedCode, setCopiedCode] = useState(false);
   const [feedback, setFeedback] = useState<'helpful' | 'not-helpful' | null>(null);
 
@@ -159,6 +207,9 @@ export function DocsPage({ store, notify }: DocsPageProps) {
                       onClick={() => {
                         setActiveDocId(doc.id);
                         setFeedback(null);
+                        try {
+                          window.history.replaceState(null, '', `/docs?id=${doc.id}`);
+                        } catch {}
                       }}
                       className={`cursor-pointer rounded-2xl p-3.5 transition ${
                         isActive
@@ -401,6 +452,10 @@ export function DocsPage({ store, notify }: DocsPageProps) {
                     onClick={() => {
                       setActiveDocId(prevDoc.id);
                       setFeedback(null);
+                      try {
+                        window.history.replaceState(null, '', `/docs?id=${prevDoc.id}`);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      } catch {}
                     }}
                     className="cursor-pointer rounded-2xl border border-slate-200 p-4 transition hover:border-[#2ea4ac] hover:bg-[#f6fcfa]"
                   >
@@ -414,6 +469,10 @@ export function DocsPage({ store, notify }: DocsPageProps) {
                     onClick={() => {
                       setActiveDocId(nextDoc.id);
                       setFeedback(null);
+                      try {
+                        window.history.replaceState(null, '', `/docs?id=${nextDoc.id}`);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      } catch {}
                     }}
                     className="cursor-pointer rounded-2xl border border-slate-200 p-4 text-left transition hover:border-[#2ea4ac] hover:bg-[#f6fcfa]"
                     dir="ltr"

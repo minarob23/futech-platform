@@ -1,2 +1,10 @@
 User-agent: *
 Allow: /
+Allow: /projects
+Allow: /developers
+Allow: /docs
+Allow: /chat
+Disallow: /admin
+Disallow: /owner-dashboard
+Disallow: /staff-gateway
+Disallow: /api/

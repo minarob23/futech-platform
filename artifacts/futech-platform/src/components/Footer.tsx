@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   CodeXml,
   ShieldCheck,
+  Crown,
   BookOpen,
   LifeBuoy,
   FileText,
@@ -22,8 +23,13 @@ import {
   Activity,
   Layers,
   Terminal,
-  Server
+  Server,
+  Cookie,
+  Globe,
+  MessageSquare,
+  Youtube,
 } from 'lucide-react';
+import { getPlatformSocialLinks, SocialLinkItem } from '../lib/socialLinks';
 
 interface FooterProps {
   onNotify?: (msg: string) => void;
@@ -31,20 +37,16 @@ interface FooterProps {
 
 export function Footer({ onNotify }: FooterProps) {
   const [activeModal, setActiveModal] = useState<'terms' | 'privacy' | null>(null);
-  const [emailInput, setEmailInput] = useState('');
-  const [subscribed, setSubscribed] = useState(false);
+  // Dynamic Social Links sync
+  const [socialLinks, setSocialLinks] = useState<SocialLinkItem[]>(getPlatformSocialLinks);
 
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!emailInput || !emailInput.includes('@')) {
-      if (onNotify) onNotify('يرجى إدخال بريد إلكتروني صحيح');
-      return;
-    }
-    setSubscribed(true);
-    if (onNotify) {
-      onNotify('تم اشتراكك بنجاح في نشرة فوتيك البرمجية الأسبوعية! 🚀');
-    }
-  };
+  useEffect(() => {
+    const handleSync = () => {
+      setSocialLinks(getPlatformSocialLinks());
+    };
+    window.addEventListener('futech_social_links_updated', handleSync);
+    return () => window.removeEventListener('futech_social_links_updated', handleSync);
+  }, []);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -61,49 +63,53 @@ export function Footer({ onNotify }: FooterProps) {
         <div className="border-b border-white/5 py-12">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-12">
-              {/* Left / Newsletter Pitch */}
+              {/* Left / FuTech Engineering & Project Launch CTA Hub */}
               <div className="lg:col-span-7">
-                <div className="inline-flex items-center gap-2 rounded-full border border-[#2db1ba]/30 bg-[#2db1ba]/10 px-3 py-1 text-xs font-black text-[#5ce0e8]">
+                <div className="inline-flex items-center gap-2 rounded-full border border-[#2db1ba]/30 bg-[#2db1ba]/10 px-3.5 py-1 text-xs font-black text-[#5ce0e8]">
                   <Sparkles size={13} />
-                  <span>النشرة البرمجية الأسبوعية • FuTech Digest</span>
+                  <span>حاضنة المشاريع البرمجية المعتمدة • FuTech Engineering Hub</span>
                 </div>
                 <h3 className="mt-3 text-xl font-black text-white sm:text-2xl">
-                  انضم لأكثر من 15,000 مهندس برمجي ومؤسس تقني
+                  ابدأ مشروعك البرمجي القادم بضمان مالي وهندسي 100%
                 </h3>
-                <p className="mt-1.5 text-xs leading-relaxed text-slate-400 sm:text-sm">
-                  احصل أسبوعياً على أحدث متطلبات السوق البرمجي، دراسات حالات الأنظمة، وتحديثات مؤشر الجودة FQS.
+                <p className="mt-2 text-xs leading-relaxed text-slate-300 sm:text-sm">
+                  انشر متطلباتك البرمجية مجاناً وبدون أي عمولات خفية، استقبل عروض نخبة المهندسين المعتمدين، واستلم الشيفرة المصدرية كاملة عبر مستودعات Git مع ضمان صيانة مجاني لمدة 30 يوماً.
                 </p>
 
-                {/* Newsletter Form */}
-                <form onSubmit={handleSubscribe} className="mt-4 flex max-w-md flex-col gap-2 sm:flex-row">
-                  <div className="relative flex-1">
-                    <input
-                      type="email"
-                      value={emailInput}
-                      onChange={(e) => setEmailInput(e.target.value)}
-                      placeholder="أدخل بريدك الإلكتروني (e.g. dev@domain.com)"
-                      disabled={subscribed}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs text-white placeholder-slate-500 outline-hidden transition focus:border-[#2db1ba] focus:bg-[#16273c]"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={subscribed}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#20878e] to-[#2db1ba] px-5 py-2.5 text-xs font-black text-[#0b1c28] shadow-md shadow-[#2db1ba]/20 transition hover:from-[#259ca4] hover:to-[#38c8d2] disabled:opacity-60"
+                {/* Direct Action CTA Buttons */}
+                <div className="mt-5 flex flex-wrap items-center gap-3">
+                  <Link
+                    href="/post-project"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#20878e] via-[#299ea7] to-[#35c3cc] px-5 py-2.5 text-xs font-black text-[#07131e] shadow-lg shadow-[#20878e]/25 transition hover:brightness-110 active:scale-95"
                   >
-                    {subscribed ? (
-                      <>
-                        <Check size={14} className="stroke-[3]" />
-                        <span>تم الاشتراك!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Send size={14} />
-                        <span>اشتراك الآن</span>
-                      </>
-                    )}
-                  </button>
-                </form>
+                    <CodeXml size={15} />
+                    <span>نشر مشروع برمجي جديد مجاناً</span>
+                  </Link>
+
+                  <Link
+                    href="/developers"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-xs font-bold text-white transition hover:border-[#2db1ba]/50 hover:bg-white/10"
+                  >
+                    <span>استكشاف نخبة المطورين</span>
+                    <ArrowUp size={13} className="rotate-45" />
+                  </Link>
+                </div>
+
+                {/* Quick Trust Highlights Micro-bar */}
+                <div className="mt-4 flex flex-wrap items-center gap-4 text-[11px] font-bold text-slate-400">
+                  <span className="flex items-center gap-1.5 text-emerald-400">
+                    <Check size={13} className="stroke-[3]" />
+                    <span>ضمان Escrow مالي 100%</span>
+                  </span>
+                  <span className="flex items-center gap-1.5 text-cyan-400">
+                    <Check size={13} className="stroke-[3]" />
+                    <span>0% عمولة على المطورين</span>
+                  </span>
+                  <span className="flex items-center gap-1.5 text-teal-300">
+                    <Check size={13} className="stroke-[3]" />
+                    <span>نقل ملكية مستودعات Git بالكامل</span>
+                  </span>
+                </div>
               </div>
 
               {/* Right / Platform Trust Highlights Pills */}
@@ -177,53 +183,44 @@ export function Footer({ onNotify }: FooterProps) {
                 حاضنة الكفاءات البرمجية العربية — ملتقى نخبة المطورين لإنجاز المشاريع باحترافية، تسليم مستودعات برمجية معتمدة، وتوثيق تقني متقدم وفق أعلى معايير الجودة العالمية.
               </p>
 
-              {/* Platform Status Pulse Indicator */}
-              <div className="mt-5 inline-flex items-center gap-2.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3.5 py-1.5 text-[11px] font-bold text-emerald-400">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
-                </span>
-                <span>حالة المنصة: جميع الخدمات ومستودعات التوثيق تعمل بكفاءة (99.98%)</span>
-              </div>
-
-              {/* Social Channels Links */}
-              <div className="mt-6 flex items-center gap-2.5">
-                <a
-                  href="https://github.com"
-                  target="_blank"
-                  rel="noreferrer"
-                  title="GitHub Community"
-                  className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition hover:border-[#2db1ba]/40 hover:bg-[#2db1ba]/10 hover:text-[#5ce0e8]"
-                >
-                  <Github size={16} />
-                </a>
-                <a
-                  href="https://twitter.com"
-                  target="_blank"
-                  rel="noreferrer"
-                  title="Twitter / X"
-                  className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition hover:border-[#2db1ba]/40 hover:bg-[#2db1ba]/10 hover:text-[#5ce0e8]"
-                >
-                  <Twitter size={16} />
-                </a>
-                <a
-                  href="https://linkedin.com"
-                  target="_blank"
-                  rel="noreferrer"
-                  title="LinkedIn"
-                  className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition hover:border-[#2db1ba]/40 hover:bg-[#2db1ba]/10 hover:text-[#5ce0e8]"
-                >
-                  <Linkedin size={16} />
-                </a>
-                <a
-                  href="https://discord.com"
-                  target="_blank"
-                  rel="noreferrer"
-                  title="المجتمع البرمجي"
-                  className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition hover:border-[#2db1ba]/40 hover:bg-[#2db1ba]/10 hover:text-[#5ce0e8]"
-                >
-                  <Terminal size={16} />
-                </a>
+              {/* Social Channels Links (Logos Only, Modern & Sleek) */}
+              <div className="mt-6 flex flex-wrap items-center gap-2">
+                {socialLinks
+                  .filter((s) => s.isActive)
+                  .map((link) => {
+                    const isGh = link.platform === 'github';
+                    return (
+                      <a
+                        key={link.id}
+                        href={link.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={link.label}
+                        aria-label={link.label}
+                        className={`group flex h-9 w-9 items-center justify-center rounded-xl border transition-all duration-200 hover:scale-105 active:scale-95 ${
+                          isGh
+                            ? 'border-teal-500/40 bg-teal-500/10 text-[#5ce0e8] hover:border-teal-400 hover:bg-teal-500/20 hover:text-white shadow-xs shadow-teal-500/20'
+                            : 'border-white/10 bg-white/5 text-slate-300 hover:border-[#2db1ba]/40 hover:bg-[#2db1ba]/10 hover:text-[#5ce0e8]'
+                        }`}
+                      >
+                        {link.platform === 'github' ? (
+                          <Github size={17} className="text-[#5ce0e8] transition group-hover:scale-110" />
+                        ) : link.platform === 'linkedin' ? (
+                          <Linkedin size={17} className="transition group-hover:scale-110" />
+                        ) : link.platform === 'twitter' ? (
+                          <Twitter size={17} className="transition group-hover:scale-110" />
+                        ) : link.platform === 'youtube' ? (
+                          <Youtube size={17} className="transition group-hover:scale-110" />
+                        ) : link.platform === 'telegram' ? (
+                          <Send size={17} className="transition group-hover:scale-110" />
+                        ) : link.platform === 'discord' ? (
+                          <MessageSquare size={17} className="transition group-hover:scale-110" />
+                        ) : (
+                          <Globe size={17} className="transition group-hover:scale-110" />
+                        )}
+                      </a>
+                    );
+                  })}
               </div>
             </div>
 
@@ -286,17 +283,17 @@ export function Footer({ onNotify }: FooterProps) {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/docs" className="transition hover:text-[#5ce0e8]">
+                  <Link href="/docs?id=d-1" className="transition hover:text-[#5ce0e8]">
                     دليل مؤشر الجودة FQS
                   </Link>
                 </li>
                 <li>
-                  <Link href="/docs" className="transition hover:text-[#5ce0e8]">
+                  <Link href="/docs?id=d-3" className="transition hover:text-[#5ce0e8]">
                     إرشادات تسليم الكود عبر GitHub
                   </Link>
                 </li>
                 <li>
-                  <Link href="/support" className="transition hover:text-[#5ce0e8]">
+                  <Link href="/support?template=sla" className="transition hover:text-[#5ce0e8]">
                     نماذج تذاكر الدعم والصيانة SLA
                   </Link>
                 </li>
@@ -310,13 +307,13 @@ export function Footer({ onNotify }: FooterProps) {
               </h4>
               <ul className="mt-4 space-y-2.5 text-xs font-bold text-slate-400">
                 <li>
-                  <button
-                    onClick={() => setActiveModal('terms')}
+                  <Link
+                    href="/terms"
                     className="inline-flex items-center gap-1.5 text-right font-black text-slate-300 transition hover:text-[#5ce0e8]"
                   >
                     <Scale size={14} className="text-[#35c3cc]" />
-                    <span>اتفاقية المستخدم</span>
-                  </button>
+                    <span>اتفاقية المستخدم والضمان المالي</span>
+                  </Link>
                 </li>
                 <li>
                   <button
@@ -328,12 +325,21 @@ export function Footer({ onNotify }: FooterProps) {
                   </button>
                 </li>
                 <li>
-                  <Link href="/docs" className="transition hover:text-[#5ce0e8]">
+                  <Link
+                    href="/cookies"
+                    className="inline-flex items-center gap-1.5 text-right font-black text-slate-300 transition hover:text-[#5ce0e8]"
+                  >
+                    <Cookie size={14} className="text-[#35c3cc]" />
+                    <span>سياسة ملفات الارتباط</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/docs?id=d-6" className="transition hover:text-[#5ce0e8]">
                     معايير الأمان OWASP
                   </Link>
                 </li>
                 <li>
-                  <Link href="/docs" className="transition hover:text-[#5ce0e8]">
+                  <Link href="/docs?id=d-7" className="transition hover:text-[#5ce0e8]">
                     ميثاق النزاهة وحظر الدفع الخارجي
                   </Link>
                 </li>
@@ -366,6 +372,14 @@ export function Footer({ onNotify }: FooterProps) {
                 <Lock size={14} className="text-[#35c3cc]" />
                 <span>سياسة الخصوصية</span>
               </button>
+
+              <Link
+                href="/cookies"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-black text-slate-200 transition hover:border-[#2db1ba]/40 hover:bg-white/10 hover:text-white"
+              >
+                <Cookie size={14} className="text-[#35c3cc]" />
+                <span>سياسة ملفات الارتباط</span>
+              </Link>
 
               <Link
                 href="/support"
@@ -504,7 +518,15 @@ export function Footer({ onNotify }: FooterProps) {
                 </div>
               </div>
 
-              <div className="mt-8 flex justify-end gap-3 border-t border-white/10 pt-5">
+              <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5">
+                <Link
+                  href="/terms"
+                  onClick={() => setActiveModal(null)}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#5ce0e8] transition hover:underline"
+                >
+                  <ExternalLink size={14} />
+                  <span>فتح الصفحة الكاملة للوثيقة وميثاق الضمان Escrow ←</span>
+                </Link>
                 <button
                   onClick={() => setActiveModal(null)}
                   className="rounded-xl bg-gradient-to-r from-[#20878e] to-[#2db1ba] px-6 py-2.5 text-xs font-black text-[#0b1c28] shadow-md transition hover:opacity-90"
