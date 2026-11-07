@@ -92,6 +92,39 @@ export function HomePage({ store, go, notify, onOpenAuth, onSwitchUser, update }
       {/* 3D Animated Ambient Cyber Background */}
       <CyberBackground3D />
 
+      {/* Top Announcement Bar in One Line & Crisp White (شريط إعلاني أبيض في سطر واحد) */}
+      <div className="relative z-30 bg-white border-b border-slate-200/90 py-2 px-3 sm:px-6 shadow-xs">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-teal-50 border border-teal-200 text-teal-800 font-black shrink-0 text-[11px]">
+              📢 بيان رسمي
+            </span>
+            <span className="font-bold text-slate-800 truncate">
+              المنصة متاحة للعمل الفعلي وتحت التجربة الحية • دعواتكم لأخوكم المهندس مينا روبير مجدى فوزى (جيش الداخلية - قوات أمن المنصورة)
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsAnnouncementOpen(true)}
+              className="inline-flex items-center gap-1 text-teal-700 hover:text-teal-800 font-black underline text-xs cursor-pointer whitespace-nowrap"
+            >
+              قراءة الرسالة كاملة
+            </button>
+            <span className="text-slate-300">|</span>
+            <a
+              href="https://wa.me/201115294735"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 font-bold text-emerald-600 hover:text-emerald-700 text-xs"
+            >
+              واتساب المطور
+            </a>
+          </div>
+        </div>
+      </div>
+
       {/* Top Unified Modern Navbar */}
       <div className="relative z-20">
         <UnifiedNavbar
