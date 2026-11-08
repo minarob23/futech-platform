@@ -1,0 +1,42 @@
+{
+  "$schema": "https://agenticresourcediscovery.org/schemas/v1/ai-catalog.schema.json",
+  "name": "FuTech Platform",
+  "description": "Arabic Software Engineering Incubator & FQS Quality Code Marketplace",
+  "version": "2.6.0",
+  "provider": {
+    "name": "FuTech",
+    "url": "https://futech-platform.vercel.app"
+  },
+  "capabilities": [
+    "software-engineering",
+    "escrow-payments",
+    "fqs-code-audit",
+    "developer-matching"
+  ],
+  "resources": [
+    {
+      "name": "Projects Directory",
+      "description": "Browse and submit proposals for active software engineering projects",
+      "url": "https://futech-platform.vercel.app/projects",
+      "type": "text/html"
+    },
+    {
+      "name": "Certified Developers",
+      "description": "Verified software engineers with FQS code quality ratings",
+      "url": "https://futech-platform.vercel.app/devs",
+      "type": "text/html"
+    },
+    {
+      "name": "FQS Documentation",
+      "description": "FuTech Quality Score standard and Git handover specifications",
+      "url": "https://futech-platform.vercel.app/docs",
+      "type": "text/html"
+    },
+    {
+      "name": "Engineering Disputes & Support",
+      "description": "Technical arbitration and support ticketing for client projects",
+      "url": "https://futech-platform.vercel.app/support",
+      "type": "text/html"
+    }
+  ]
+}
