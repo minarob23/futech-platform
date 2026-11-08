@@ -35,12 +35,13 @@ export function HomePage({ store, go, notify, onOpenAuth, onSwitchUser, update, 
 
   // Automatically open the announcement modal ONLY when the landing page actually appears
   useEffect(() => {
-    if (isLandingVisible) {
-      const timer = setTimeout(() => {
-        setIsAnnouncementOpen(true);
-      }, 500);
-      return () => clearTimeout(timer);
+    if (!isLandingVisible) {
+      return undefined;
     }
+    const timer = setTimeout(() => {
+      setIsAnnouncementOpen(true);
+    }, 500);
+    return () => clearTimeout(timer);
   }, [isLandingVisible]);
   const [activeFeatureTab, setActiveFeatureTab] = useState<'workflow' | 'fqs' | 'community'>('workflow');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
