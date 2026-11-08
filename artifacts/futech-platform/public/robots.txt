@@ -13,3 +13,5 @@ Disallow: /staff-gateway
 Disallow: /api/
 
 Sitemap: https://futech-platform.vercel.app/sitemap.xml
+Agentmap: https://futech-platform.vercel.app/.well-known/ai-catalog.json
+Agentmap: https://futech-platform.vercel.app/.well-known/ard.json

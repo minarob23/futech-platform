@@ -1,0 +1,49 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "FuTech Platform",
+    "publisher": "futech-platform.vercel.app",
+    "documentationUrl": "https://futech-platform.vercel.app/docs"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:futech-platform.vercel.app:projects:catalog",
+      "displayName": "FuTech Projects Catalog",
+      "type": "application/json",
+      "url": "https://futech-platform.vercel.app/projects",
+      "description": "Browse and submit proposals for active software engineering projects on FuTech.",
+      "representativeQueries": [
+        "Find freelance software development projects in the Arab region",
+        "Browse open web and mobile development contracts with escrow payment",
+        "Search for React, Next.js, and Python projects"
+      ],
+      "tags": ["projects", "freelance", "software-engineering", "escrow"]
+    },
+    {
+      "identifier": "urn:air:futech-platform.vercel.app:devs:catalog",
+      "displayName": "FuTech Certified Developers",
+      "type": "application/json",
+      "url": "https://futech-platform.vercel.app/devs",
+      "description": "Directory of verified Arab software engineers and full-stack developers certified under FuTech Quality Score (FQS).",
+      "representativeQueries": [
+        "Hire vetted senior Full-Stack developers in Egypt, Saudi Arabia, and UAE",
+        "Find verified React, Next.js, FastAPI, and Spring Boot engineers",
+        "Browse top-rated developers with FQS code audit badge"
+      ],
+      "tags": ["developers", "engineers", "fqs-certified", "full-stack"]
+    },
+    {
+      "identifier": "urn:air:futech-platform.vercel.app:docs:fqs",
+      "displayName": "FuTech Quality Score Standard & Docs",
+      "type": "text/markdown",
+      "url": "https://futech-platform.vercel.app/docs",
+      "description": "Official documentation for FuTech Quality Score (FQS), Git handover requirements, and OWASP security audit standards.",
+      "representativeQueries": [
+        "What is FuTech Quality Score (FQS)?",
+        "Git handover and code quality audit criteria for developers",
+        "Smart escrow guarantee rules and dispute arbitration policy"
+      ],
+      "tags": ["documentation", "fqs-score", "git-handover", "quality-audit"]
+    }
+  ]
+}
