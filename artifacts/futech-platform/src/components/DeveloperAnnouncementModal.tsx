@@ -283,37 +283,52 @@ export function DeveloperAnnouncementModal({ isOpen, onClose }: DeveloperAnnounc
                 </div>
               </div>
 
-              {/* Payment Methods */}
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5">
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2 text-base sm:text-lg font-black text-slate-900">
+              {/* Payment Methods Notice (Clarified that they are NOT done yet) */}
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5 shadow-xs">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2 text-base sm:text-lg font-black text-amber-950">
                     <CreditCard size={20} className="text-amber-600" />
-                    <span>وسائل الدفع وبوابات السداد (شغالين على إنهاء الربط الرسمي):</span>
+                    <span>وسائل الدفع وبوابات السداد (لسة متعملوش وشغالين على برمجتهم وربطهم):</span>
                   </div>
-                  <span className="text-xs sm:text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-lg">
-                    Escrow Vault شغال لحفظ حقوق الطرفين
+                  <span className="text-xs sm:text-sm font-black text-amber-800 bg-amber-100/90 border border-amber-300 px-3 py-1 rounded-lg">
+                    ⚠️ لسة ماتعملوش رسمياً (قيد التطوير)
                   </span>
                 </div>
 
+                <p className="text-sm sm:text-base text-amber-900 leading-relaxed font-semibold mb-3">
+                  عشان الشفافية والأمانة الكاملة مع حضراتكم: بوابات السداد الإلكتروني المباشر <strong>لسة متعملتش وماتفعلتش على المنصة</strong>، وإحنا شغالين حالياً على الربط البرمجي والـ APIs الخاصة بيهم. التعامل والاتفاق حالياً بيتم بالتراضي والتواصل المباشر بين المطور والعميل لحين تفعيلهم رسمياً!
+                </p>
+
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5 text-center text-xs sm:text-sm font-mono font-bold">
-                  <div className="rounded-xl bg-white border border-slate-200 p-3 text-slate-800 shadow-2xs hover:border-teal-400 transition">
-                    Vodafone Cash
+                  <div className="rounded-xl bg-white border border-amber-200 p-2.5 text-slate-800 shadow-2xs">
+                    <div>Vodafone Cash</div>
+                    <div className="text-[11px] text-amber-700 font-sans mt-0.5 font-bold">قيد البرمجة ⏳</div>
                   </div>
-                  <div className="rounded-xl bg-white border border-slate-200 p-3 text-slate-800 shadow-2xs hover:border-teal-400 transition">
-                    InstaPay اللحظي
+                  <div className="rounded-xl bg-white border border-amber-200 p-2.5 text-slate-800 shadow-2xs">
+                    <div>InstaPay اللحظي</div>
+                    <div className="text-[11px] text-amber-700 font-sans mt-0.5 font-bold">قيد البرمجة ⏳</div>
                   </div>
-                  <div className="rounded-xl bg-white border border-slate-200 p-3 text-slate-800 shadow-2xs hover:border-teal-400 transition">
-                    Visa / Mastercard
+                  <div className="rounded-xl bg-white border border-amber-200 p-2.5 text-slate-800 shadow-2xs">
+                    <div>Visa / Mastercard</div>
+                    <div className="text-[11px] text-amber-700 font-sans mt-0.5 font-bold">قيد البرمجة ⏳</div>
                   </div>
-                  <div className="rounded-xl bg-white border border-slate-200 p-3 text-slate-800 shadow-2xs hover:border-teal-400 transition">
-                    USDT (Crypto)
+                  <div className="rounded-xl bg-white border border-amber-200 p-2.5 text-slate-800 shadow-2xs">
+                    <div>USDT (Crypto)</div>
+                    <div className="text-[11px] text-amber-700 font-sans mt-0.5 font-bold">قيد البرمجة ⏳</div>
                   </div>
-                  <div className="rounded-xl bg-white border border-slate-200 p-3 text-slate-800 shadow-2xs hover:border-teal-400 transition">
-                    Fawry Pay
+                  <div className="rounded-xl bg-white border border-amber-200 p-2.5 text-slate-800 shadow-2xs">
+                    <div>Fawry Pay</div>
+                    <div className="text-[11px] text-amber-700 font-sans mt-0.5 font-bold">قيد البرمجة ⏳</div>
                   </div>
-                  <div className="rounded-xl bg-white border border-slate-200 p-3 text-slate-800 shadow-2xs hover:border-teal-400 transition">
-                    تحويل بنكي مباشر
+                  <div className="rounded-xl bg-white border border-amber-200 p-2.5 text-slate-800 shadow-2xs">
+                    <div>تحويل بنكي مباشر</div>
+                    <div className="text-[11px] text-amber-700 font-sans mt-0.5 font-bold">قيد البرمجة ⏳</div>
                   </div>
+                </div>
+
+                <div className="mt-3 flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700 bg-white/70 border border-amber-200/60 p-2.5 rounded-xl">
+                  <ShieldCheck size={16} className="text-teal-600 shrink-0" />
+                  <span>محفظة الضمان الذكية (Escrow Vault) هي الخطوة البرمجية القادمة لحفظ حقوق الطرفين وتأمين المعاملات.</span>
                 </div>
               </div>
             </div>
