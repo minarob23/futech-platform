@@ -234,6 +234,22 @@ export function buildOwnerDeveloper(): Developer {
     work: 'تطوير منصات برمجية سحابية متقدمة، أنظمة POS والمبيعات، وبنى تحتية موزعة عالية الاعتمادية',
     portfolio: [
       {
+        id: 'port-futech-platform',
+        title: 'منصة FuTech Platform الهندسية',
+        description: 'المنصة الهندسية المتكاملة لحوكمة المشاريع المستقلة وتوثيق كفاءة المهندسين العرب مع أنظمة الضمان المالي المشفرة (Escrow Vault).',
+        tech: ['React 19', 'Next.js (App Router)', 'TypeScript', 'Node.js', 'PostgreSQL', 'Tailwind CSS', 'Supabase'],
+        previewType: 'saas',
+        previewImage: '/images/futech-logo.jpg',
+        metrics: '99.98% Uptime • Escrow Vault Active',
+        liveUrl: 'https://futech-platform.vercel.app',
+        githubUrl: 'https://github.com/minarob23/futech-platform',
+        features: [
+          'نظام الضمان المالي المشفر وحجز المستحقات بالكامل لحماية حقوق الطرفين (Escrow Vault)',
+          'مؤشر كفاءة هندسي FQS دقيق ومبني على اختبارات Git والفحوصات الأمنية الصارمة OWASP',
+          'غرف محادثة مشفرة، نظام تذاكر دعم فني ذكي، ولوحات تحكم متقدمة لإدارة الحوكمة',
+        ],
+      },
+      {
         id: 'port-dentalai',
         title: 'منصة DentalAI للذكاء الاصطناعي الطبي والعيادات (DentalAI — Algostep)',
         description: 'منصة طبية متقدمة لإدارة عيادات ومراكز الأسنان والفرز الطبي الذكي المدعوم بالذكاء الاصطناعي مع جدولة المواعيد المتزامنة عبر واتساب وحماية Webhooks.',
@@ -321,22 +337,7 @@ export function buildOwnerDeveloper(): Developer {
           'واجهات برمجية عالية الأداء مبنية بإطار FastAPI وقواعد بيانات PostgreSQL مع لوحات تحليلية تفاعلية',
         ],
       },
-      {
-        id: 'port-futech-platform',
-        title: 'منصة FuTech Platform الهندسية (FuTech Platform — Founder)',
-        description: 'المنصة الهندسية المتكاملة لحوكمة المشاريع المستقلة وتوثيق كفاءة المهندسين العرب مع أنظمة الضمان المالي المشفرة (Escrow Vault).',
-        tech: ['React 19', 'TypeScript', 'Node.js', 'PostgreSQL', 'Tailwind CSS', 'Supabase'],
-        previewType: 'saas',
-        previewImage: '/images/futech-logo.jpg',
-        metrics: '99.98% Uptime • Escrow Vault Active • FQS Standard',
-        liveUrl: 'https://futech-platform.vercel.app',
-        githubUrl: 'https://github.com/minarob23/futech-platform',
-        features: [
-          'نظام الضمان المالي المشفر وحجز المستحقات بالكامل لحماية حقوق الطرفين (Escrow Vault)',
-          'مؤشر كفاءة هندسي FQS دقيق ومبني على اختبارات Git والفحوصات الأمنية الصارمة OWASP',
-          'غرف محادثة مشفرة، نظام تذاكر دعم فني ذكي، ولوحات تحكم متقدمة لإدارة الحوكمة',
-        ],
-      },
+      
     ],
     reviews: [
       {
