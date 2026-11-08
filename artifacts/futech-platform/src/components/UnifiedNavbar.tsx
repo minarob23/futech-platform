@@ -260,7 +260,7 @@ export function UnifiedNavbar({
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/70 bg-white/85 backdrop-blur-xl transition-colors duration-200 dark:border-white/[0.08] dark:bg-[#070d18]/90">
-      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-4 px-3 sm:px-6 lg:px-8 xl:px-10">
+      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-2.5 sm:gap-4 px-3 sm:px-4 md:px-6 lg:px-6 xl:px-8">
         
         {/* RIGHT (RTL): Brand Logo & Title (shrink-0 ensures it never squishes) */}
         <div className="flex shrink-0 items-center gap-3 sm:gap-6">
@@ -327,7 +327,7 @@ export function UnifiedNavbar({
           })}
 
           {/* Secondary Links (Docs & Support) - Inline on wide screens (xl+) */}
-          <div className="hidden xl:flex items-center gap-0.5 2xl:gap-1 shrink-0 whitespace-nowrap" style={{ whiteSpace: 'nowrap' }}>
+          <div className="hidden 2xl:flex items-center gap-0.5 2xl:gap-1 shrink-0 whitespace-nowrap" style={{ whiteSpace: 'nowrap' }}>
             {secondaryLinks.map((sub) => {
               const isActive = route === sub.href;
               return (
@@ -348,7 +348,7 @@ export function UnifiedNavbar({
           </div>
 
           {/* "المزيد" Dropdown for Docs and Support - Shown on standard laptop screens (< xl) */}
-          <div className="xl:hidden relative" ref={moreRef}>
+          <div className="2xl:hidden relative" ref={moreRef}>
             <button
               type="button"
               onClick={() => setMoreMenuOpen(!moreMenuOpen)}
@@ -410,7 +410,7 @@ export function UnifiedNavbar({
         </nav>
 
         {/* LEFT (RTL): Actions, User Account, Theme Toggle & Mobile Button (shrink-0 ensures it NEVER cuts off!) */}
-        <div className="flex shrink-0 items-center gap-2 sm:gap-3 lg:gap-3.5">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5 lg:gap-3">
           
           {/* Post Project CTA Button */}
           <Link
@@ -660,7 +660,7 @@ export function UnifiedNavbar({
                   size="xs"
                   indicator={true}
                 />
-                <span className="hidden max-w-[85px] truncate whitespace-nowrap text-xs font-extrabold sm:inline-block md:max-w-[110px]">
+                <span className="hidden max-w-[70px] sm:max-w-[85px] lg:max-w-[105px] truncate whitespace-nowrap text-xs font-extrabold sm:inline-block">
                   {currentUser.name}
                 </span>
                 <span className={`hidden 2xl:inline-block rounded-full border px-2 py-0.5 text-[9px] font-black whitespace-nowrap ${getRoleBadgeStyle(currentUser.role, currentUser.name)}`}>
@@ -904,10 +904,10 @@ export function UnifiedNavbar({
           <div className="hidden sm:block h-5 w-px bg-slate-200/90 dark:bg-white/10 mx-0.5" />
 
           {/* Luxury Theme Toggle - Segmented on desktop (xl+), Minimal icon button on compact screens */}
-          <div className="hidden xl:block">
+          <div className="hidden 2xl:block shrink-0">
             <ThemeToggle variant="segmented" />
           </div>
-          <div className="block xl:hidden">
+          <div className="block 2xl:hidden shrink-0">
             <ThemeToggle variant="minimal" />
           </div>
 
