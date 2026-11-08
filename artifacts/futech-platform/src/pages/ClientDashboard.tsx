@@ -27,6 +27,7 @@ import { AddReviewModal } from '../components/AddReviewModal';
 import { EscrowWalletHub } from '../components/EscrowWalletHub';
 import { UserAvatar } from '../components/UserAvatar';
 import { useAuth } from '../lib/AuthContext';
+import { validateUploadedFile, getAcceptStringForContext } from '../lib/fileSecurity';
 
 interface ClientDashboardProps {
   store: Store;
@@ -178,12 +179,9 @@ export function ClientDashboard({
 
   // Handle Drag & Drop / File Select Image
   const handleImageFileChange = (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      notify('يرجى اختيار ملف صورة صالح (PNG, JPG, WEBP, SVG)');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      notify('حجم الصورة كبير جداً. الحد الأقصى 5 ميجابايت');
+    const validation = validateUploadedFile(file, { context: 'avatar' });
+    if (!validation.isValid) {
+      notify(validation.error || 'يرجى اختيار ملف صورة صالح (PNG, JPG, WEBP)');
       return;
     }
     const reader = new FileReader();
@@ -690,7 +688,15 @@ export function ClientDashboard({
     if (!files || files.length === 0) return;
 
     const newAtts: MessageAttachment[] = [];
+    const rejectedErrors: string[] = [];
+
     Array.from(files).forEach((file) => {
+      const validation = validateUploadedFile(file, { context: 'chat' });
+      if (!validation.isValid) {
+        rejectedErrors.push(validation.error || `تم رفض الملف (${file.name}) لدواعي الأمان والحماية.`);
+        return;
+      }
+
       const isImg = file.type.startsWith('image/');
       const isPdf = file.type.includes('pdf');
       const isArchive = file.name.endsWith('.zip') || file.name.endsWith('.rar');
@@ -709,15 +715,21 @@ export function ClientDashboard({
 
       newAtts.push({
         id: 'att-chat-' + Math.random().toString(36).substring(2, 9),
-        name: file.name,
+        name: validation.sanitizedName,
         size: sizeStr,
         type,
         url: isImg ? URL.createObjectURL(file) : '#',
       });
     });
 
-    setPendingChatAttachments((prev) => [...prev, ...newAtts]);
-    notify(`تم إرفاق ${newAtts.length} ملف/صورة للمحادثة`);
+    if (rejectedErrors.length > 0) {
+      notify(rejectedErrors[0]);
+    }
+
+    if (newAtts.length > 0) {
+      setPendingChatAttachments((prev) => [...prev, ...newAtts]);
+      notify(`تم إرفاق ${newAtts.length} ملف/صورة للمحادثة`);
+    }
     if (chatFileInputRef.current) chatFileInputRef.current.value = '';
   };
 
@@ -802,7 +814,7 @@ export function ClientDashboard({
         ref={chatFileInputRef}
         type="file"
         multiple
-        accept="image/*,.pdf,.doc,.docx,.zip,.rar,.txt,.json"
+        accept={getAcceptStringForContext('chat')}
         className="hidden"
         onChange={handleAttachFiles}
       />
@@ -2100,7 +2112,7 @@ export function ClientDashboard({
                   <input
                     ref={avatarFileInputRef}
                     type="file"
-                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                    accept={getAcceptStringForContext('avatar')}
                     className="hidden"
                     onChange={(e) => {
                       if (e.target.files && e.target.files[0]) {

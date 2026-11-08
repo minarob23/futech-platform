@@ -14,6 +14,7 @@ import {
 import { Store, Project, Conversation, MessageItem, MessageAttachment } from '../types';
 import { sendMessageInSupabase, subscribeToLiveMessages } from '../lib/supabaseData';
 import { sendBrowserNotification } from '../lib/webPushNotifications';
+import { validateUploadedFile, getAcceptStringForContext } from '../lib/fileSecurity';
 
 interface ChatPageProps {
   store: Store;
@@ -79,7 +80,15 @@ export function ChatPage({ store, update, notify, requestedId }: ChatPageProps) 
     if (!files || files.length === 0) return;
 
     const newAtts: MessageAttachment[] = [];
+    const rejectedErrors: string[] = [];
+
     Array.from(files).forEach((file) => {
+      const validation = validateUploadedFile(file, { context: 'chat' });
+      if (!validation.isValid) {
+        rejectedErrors.push(validation.error || `تم رفض الملف (${file.name}) لدواعي الأمان والحماية.`);
+        return;
+      }
+
       const isImg = file.type.startsWith('image/');
       const isPdf = file.type === 'application/pdf';
       const isDoc = file.name.endsWith('.doc') || file.name.endsWith('.docx');
@@ -102,15 +111,21 @@ export function ChatPage({ store, update, notify, requestedId }: ChatPageProps) 
 
       newAtts.push({
         id: 'att-chat-' + Math.random().toString(36).substring(2, 9),
-        name: file.name,
+        name: validation.sanitizedName,
         size: sizeStr,
         type,
         url: isImg ? URL.createObjectURL(file) : '#',
       });
     });
 
-    setPendingAttachments((prev) => [...prev, ...newAtts]);
-    notify(`تم إرفاق ${newAtts.length} ملف/صورة للمحادثة`);
+    if (rejectedErrors.length > 0) {
+      notify(rejectedErrors[0]);
+    }
+
+    if (newAtts.length > 0) {
+      setPendingAttachments((prev) => [...prev, ...newAtts]);
+      notify(`تم إرفاق ${newAtts.length} ملف/صورة للمحادثة`);
+    }
     if (chatFileInputRef.current) chatFileInputRef.current.value = '';
   };
 
@@ -174,7 +189,7 @@ export function ChatPage({ store, update, notify, requestedId }: ChatPageProps) 
         ref={chatFileInputRef}
         type="file"
         multiple
-        accept="image/*,.pdf,.doc,.docx,.zip,.rar,.fig,.xd,.txt"
+        accept={getAcceptStringForContext('chat')}
         className="hidden"
         onChange={handleAttachFiles}
       />

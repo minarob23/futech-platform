@@ -18,6 +18,7 @@ import {
 import { LiveProjectPreviewModal } from '../components/LiveProjectPreviewModal';
 import { VideoTrailerModal } from '../components/VideoTrailerModal';
 import { EscrowWalletHub } from '../components/EscrowWalletHub';
+import { validateUploadedFile, getAcceptStringForContext } from '../lib/fileSecurity';
 import { UserAvatar } from '../components/UserAvatar';
 import { SocialLinksManager } from '../components/SocialLinksManager';
 import { useAuth } from '../lib/AuthContext';
@@ -619,12 +620,9 @@ export function DeveloperDashboard({ store, update, notify, go }: DeveloperDashb
   }, [currentDev.id, currentDev.avatar, currentDev.name, currentDev.availability]);
 
   const handleImageFileChange = (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      notify('يرجى اختيار ملف صورة صالح (PNG, JPG, WEBP, SVG)');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      notify('حجم الصورة كبير جداً. الحد الأقصى 5 ميجابايت');
+    const validation = validateUploadedFile(file, { context: 'avatar' });
+    if (!validation.isValid) {
+      notify(validation.error || 'يرجى اختيار ملف صورة صالح (PNG, JPG, WEBP)');
       return;
     }
     const reader = new FileReader();
@@ -865,11 +863,9 @@ export function DeveloperDashboard({ store, update, notify, go }: DeveloperDashb
 
   // Handle CV File Upload (Drag & Drop or File Select)
   const handleProcessCvFile = (file: File) => {
-    const validExtensions = ['.pdf', '.docx', '.doc'];
-    const hasValidExt = validExtensions.some((ext) => file.name.toLowerCase().endsWith(ext));
-
-    if (!hasValidExt) {
-      notify('يرجى اختيار ملف سيرة ذاتية بصيغة PDF أو DOCX أو DOC.');
+    const validation = validateUploadedFile(file, { context: 'cv' });
+    if (!validation.isValid) {
+      notify(validation.error || 'يرجى اختيار ملف سيرة ذاتية بصيغة PDF أو DOCX أو DOC.');
       return;
     }
 
@@ -2221,7 +2217,7 @@ export function DeveloperDashboard({ store, update, notify, go }: DeveloperDashb
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf,.docx,.doc"
+                accept={getAcceptStringForContext('cv')}
                 className="hidden"
                 onChange={(e) => {
                   if (e.target.files && e.target.files[0]) {
@@ -3467,7 +3463,7 @@ export function DeveloperDashboard({ store, update, notify, go }: DeveloperDashb
                   <input
                     ref={avatarFileInputRef}
                     type="file"
-                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                    accept={getAcceptStringForContext('avatar')}
                     className="hidden"
                     onChange={(e) => {
                       if (e.target.files && e.target.files[0]) {

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Store, Project, ProjectAttachment } from '../types';
 import { saveProjectToSupabase } from '../lib/supabaseData';
+import { validateUploadedFile, getAcceptStringForContext } from '../lib/fileSecurity';
 
 interface PostProjectPageProps {
   store: Store;
@@ -74,7 +75,15 @@ export function PostProjectPage({ store, update, notify, go }: PostProjectPagePr
     if (!files || files.length === 0) return;
 
     const newAttachments: ProjectAttachment[] = [];
+    const rejectedErrors: string[] = [];
+
     Array.from(files).forEach((file) => {
+      const validation = validateUploadedFile(file, { context: 'project' });
+      if (!validation.isValid) {
+        rejectedErrors.push(validation.error || `تم رفض الملف (${file.name}) لدواعي الأمان والحماية.`);
+        return;
+      }
+
       const isImg = file.type.startsWith('image/');
       const isPdf = file.type === 'application/pdf';
       const isDoc = file.name.endsWith('.doc') || file.name.endsWith('.docx');
@@ -97,15 +106,21 @@ export function PostProjectPage({ store, update, notify, go }: PostProjectPagePr
 
       newAttachments.push({
         id: 'att-' + Math.random().toString(36).substring(2, 9),
-        name: file.name,
+        name: validation.sanitizedName,
         size: sizeStr,
         type,
         previewUrl: isImg ? URL.createObjectURL(file) : undefined,
       });
     });
 
-    setAttachments((prev) => [...prev, ...newAttachments]);
-    notify(`تم إرفاق ${newAttachments.length} ملف/صورة بنجاح`);
+    if (rejectedErrors.length > 0) {
+      notify(rejectedErrors[0]);
+    }
+
+    if (newAttachments.length > 0) {
+      setAttachments((prev) => [...prev, ...newAttachments]);
+      notify(`تم إرفاق ${newAttachments.length} ملف/صورة بنجاح`);
+    }
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -335,7 +350,7 @@ export function PostProjectPage({ store, update, notify, go }: PostProjectPagePr
             ref={fileInputRef}
             type="file"
             multiple
-            accept="image/*,.pdf,.doc,.docx,.zip,.rar,.fig,.xd,.txt"
+            accept={getAcceptStringForContext('project')}
             className="hidden"
             onChange={handleFileUpload}
           />

@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { validateUploadedFile } from './fileSecurity';
 import { Developer, Project, UserWallet, WalletTransaction, PortfolioItem, ClientReview, Application } from '../types';
 
 function isValidUuid(id?: string | null): boolean {
@@ -451,7 +452,11 @@ export async function uploadToSupabaseStorage(
   folder: string = 'general'
 ): Promise<{ url: string | null; error: string | null }> {
   try {
-    const fileExt = file.name.split('.').pop();
+    const validation = validateUploadedFile(file);
+    if (!validation.isValid) {
+      return { url: null, error: validation.error || 'الملف محظور أمنياً ولا يمكن رفعه' };
+    }
+    const fileExt = validation.extension;
     const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
 
     const { data, error } = await supabase.storage.from(bucket).upload(fileName, file, {

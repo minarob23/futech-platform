@@ -6,6 +6,7 @@ import {
   AlertCircle, ShieldCheck, FileCode, CheckCircle2, Maximize2
 } from 'lucide-react';
 import { TicketAttachment } from '../types';
+import { validateUploadedFile, getAcceptStringForContext } from '../lib/fileSecurity';
 
 // =========================================================================
 // 1. TERMINAL PRESETS
@@ -263,6 +264,7 @@ export function TicketAttachmentManager({
 }: TicketAttachmentManagerProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedPreviewImage, setSelectedPreviewImage] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Real file upload processor
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -270,8 +272,15 @@ export function TicketAttachmentManager({
     if (!files || files.length === 0) return;
 
     const newItems: TicketAttachment[] = [];
+    let errMessage: string | null = null;
 
     Array.from(files).forEach((file) => {
+      const validation = validateUploadedFile(file, { context: 'ticket' });
+      if (!validation.isValid) {
+        errMessage = validation.error || `تم رفض الملف (${file.name}) لدواعي الأمان والحماية.`;
+        return;
+      }
+
       let type: TicketAttachment['type'] = 'file';
       if (file.type.startsWith('image/')) type = 'image';
       else if (file.type.startsWith('video/')) type = 'video';
@@ -282,7 +291,7 @@ export function TicketAttachmentManager({
 
       const item: TicketAttachment = {
         id: 'att-' + Math.random().toString(36).substring(2, 9),
-        name: file.name,
+        name: validation.sanitizedName,
         size: formattedSize,
         type,
         previewUrl: type === 'image' ? URL.createObjectURL(file) : undefined,
@@ -291,7 +300,14 @@ export function TicketAttachmentManager({
       newItems.push(item);
     });
 
-    onChange([...attachments, ...newItems]);
+    if (errMessage) {
+      setUploadError(errMessage);
+      setTimeout(() => setUploadError(null), 6000);
+    }
+
+    if (newItems.length > 0) {
+      onChange([...attachments, ...newItems]);
+    }
     // reset input
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -334,11 +350,18 @@ export function TicketAttachmentManager({
         ref={fileInputRef}
         type="file"
         multiple
-        accept="image/*,video/*,.pdf,.zip,.log,.txt,.json,.sql,.ts,.js,.docx"
+        accept={getAcceptStringForContext('ticket')}
         onChange={handleFileChange}
         className="hidden"
         disabled={disabled}
       />
+
+      {uploadError && (
+        <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-2.5 text-xs font-bold text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300">
+          <AlertCircle size={15} className="shrink-0 text-rose-500" />
+          <span>{uploadError}</span>
+        </div>
+      )}
 
       {/* Upload Zone Card */}
       <div
