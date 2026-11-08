@@ -21,7 +21,7 @@ export const OWNER_EMAILS = [
 export const OWNER_FULL_NAME = 'مينا روبير مجدى فوزى';
 export const OWNER_USER_ID = 'usr-owner-mina';
 export const OWNER_DEFAULT_EMAIL = 'menarobir246rm@gmail.com';
-export const OWNER_GOOGLE_AVATAR_URL = 'https://lh3.googleusercontent.com/a/ACg8ocL551jnG3_Ko99OLnO-FISv31XIL2U2VITiBzTcd5Z93UB_y2o=s384-c';
+export const OWNER_GOOGLE_AVATAR_URL = 'https://lh3.googleusercontent.com/a/ACg8ocL551jnG3_Ko99OLnO-FISv31XIL2U2VITiBzTcd5Z93UB_y2o=s120-c';
 export const OWNER_LOCAL_AVATAR_PATH = '/images/owner-google-avatar.png';
 
 const OWNER_AVATAR_STORAGE_KEY = 'futech_owner_synced_avatar';

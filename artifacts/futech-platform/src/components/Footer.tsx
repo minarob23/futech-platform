@@ -164,11 +164,18 @@ export function Footer({ onNotify }: FooterProps) {
             {/* FuTech Brand Column */}
             <div className="lg:col-span-4">
               <Link href="/" className="inline-flex items-center gap-3">
-                <img
-                  src="/images/futech-logo.jpg"
-                  alt="شعار فوتيك FuTech"
-                  className="h-12 w-12 rounded-2xl object-cover shadow-lg shadow-[#1b3758]/40 ring-2 ring-[#2db1ba]/40"
-                />
+                <picture>
+                  <source type="image/webp" srcSet="/images/futech-logo.webp" />
+                  <img
+                    src="/images/futech-logo.jpg"
+                    alt="شعار فوتيك FuTech"
+                    width="48"
+                    height="48"
+                    loading="lazy"
+                    decoding="async"
+                    className="h-12 w-12 rounded-2xl object-cover shadow-lg shadow-[#1b3758]/40 ring-2 ring-[#2db1ba]/40"
+                  />
+                </picture>
                 <span>
                   <span className="block text-xl font-black tracking-tight text-white">
                     فوتيك <span className="text-xs font-bold text-[#35c3cc]">FuTech</span>

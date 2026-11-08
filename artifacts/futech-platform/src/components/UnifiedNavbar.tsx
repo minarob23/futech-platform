@@ -266,11 +266,17 @@ export function UnifiedNavbar({
         <div className="flex shrink-0 items-center gap-3 sm:gap-6">
           <Link href="/" className="group flex items-center gap-2.5 sm:gap-3 transition">
             <div className="relative shrink-0">
-              <img
-                src="/images/futech-logo.jpg"
-                alt="شعار فوتيك FuTech"
-                className="h-9 w-9 sm:h-10 sm:w-10 rounded-2xl object-cover shadow-sm ring-2 ring-[#2798a0]/25 transition duration-300 group-hover:scale-105 group-hover:ring-[#2798a0]/60"
-              />
+              <picture>
+                <source type="image/webp" srcSet="/images/futech-logo.webp" />
+                <img
+                  src="/images/futech-logo.jpg"
+                  alt="شعار فوتيك FuTech"
+                  width="40"
+                  height="40"
+                  decoding="async"
+                  className="h-9 w-9 sm:h-10 sm:w-10 rounded-2xl object-cover shadow-sm ring-2 ring-[#2798a0]/25 transition duration-300 group-hover:scale-105 group-hover:ring-[#2798a0]/60"
+                />
+              </picture>
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5 leading-none">

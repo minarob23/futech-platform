@@ -1,0 +1,18 @@
+# FuTech Platform — حاضنة الكفاءات البرمجية العربية
+
+> منصة هندسية عربية متكاملة لربط أصحاب المشاريع والشركات بأمهر مهندسي ومطوري البرمجيات في العالم العربي، وفق معيار جودة الكود FQS ومحفظة الضمان الذكية (Escrow Vault).
+
+## الروابط والموارد الرسمية (Official Resources)
+- [الرئيسية (Home)](https://futech-platform.vercel.app/): بوابة منصة فوتيك الهندسية واستكشاف الخدمات.
+- [دليل المشاريع (Projects)](https://futech-platform.vercel.app/projects): استعراض المشاريع البرمجية المفتوحة وتقديم العروض الفنية.
+- [سوق المطورين (Developers)](https://futech-platform.vercel.app/devs): نخبة مهندسي البرمجيات المعتمدين والمصنفين بمعيار FQS.
+- [التوثيق الهندسي ومعايير الجودة (Documentation)](https://futech-platform.vercel.app/docs): مواصفات جودة الكود FQS، فحص الأمان OWASP، وتسليم Git.
+- [الشروط والسياسات والضمان (Terms)](https://futech-platform.vercel.app/terms): وثيقة شروط الخدمة، حماية الملكية الفكرية، وسياسة الضمان المالي.
+- [مركز الدعم والنزاعات (Support)](https://futech-platform.vercel.app/support): الدعم الفني الهندسي والتحكيم الفني المستقل.
+- [اقتراحات التطوير (Suggestions)](https://futech-platform.vercel.app/suggestions): تقديم اقتراحات وتطويرات المنصة ومتابعة خارطة الطريق.
+
+## الخصائص التقنية (Platform Architecture)
+- تقييم جودة الشفرة FQS المعتمد (FuTech Quality Score).
+- محفظة الضمان المالي الذكية (Escrow Vault) لحماية أموال أصحاب المشاريع والمطورين.
+- تسليم المشاريع عبر مستودعات Git Handover مع تقارير أمان آلية.
+- عمولة 0% على المطورين مع خيارات توظيف مرنة بالساعة أو بالمشروع.

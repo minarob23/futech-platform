@@ -1,10 +1,15 @@
 User-agent: *
 Allow: /
 Allow: /projects
-Allow: /developers
+Allow: /devs
 Allow: /docs
 Allow: /chat
+Allow: /support
+Allow: /terms
+Allow: /suggestions
 Disallow: /admin
 Disallow: /owner-dashboard
 Disallow: /staff-gateway
 Disallow: /api/
+
+Sitemap: https://futech-platform.vercel.app/sitemap.xml

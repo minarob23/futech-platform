@@ -178,9 +178,9 @@ export function CyberHeroCard3D({ onExploreDevelopers, onExploreProjects }: Cybe
                 <Binary size={11} />
                 <span>معمارية Zero-Knowledge: لا نطلع على أسرارك أو أكوادك</span>
               </div>
-              <h4 className="mt-1.5 text-sm font-black text-slate-900 dark:text-white">
+              <h2 className="mt-1.5 text-sm font-black text-slate-900 dark:text-white">
                 سيادة رقمية تامة وحماية مطلقة للملكية الفكرية
-              </h4>
+              </h2>
               <p className="mt-1 text-xs text-slate-600 leading-relaxed dark:text-slate-200 font-medium">
                 مفاتيح التشفير يملكها الأطراف حصراً. تضمن المنصة حجب كشف البيانات الحساسة، حماية الشفرات البرمجية، وتطبيق فوري لاتفاقية عدم الإفصاح الموثقة.
               </p>

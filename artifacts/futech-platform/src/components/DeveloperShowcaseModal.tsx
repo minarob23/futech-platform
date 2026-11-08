@@ -83,10 +83,10 @@ export function DeveloperShowcaseModal({
 
   const getProjectImage = (item: PortfolioItem) => {
     if (item.previewImage) return item.previewImage;
-    if (item.previewType === 'ecommerce') return '/images/escrow.jpg';
-    if (item.previewType === 'mobile') return '/images/hero-banner.jpg';
-    if (item.previewType === 'ai') return '/images/new-hero.jpg';
-    if (item.previewType === 'api' || item.previewType === 'devops') return '/images/collab.jpg';
+    if (item.previewType === 'ecommerce') return '/images/escrow.webp';
+    if (item.previewType === 'mobile') return '/images/hero-banner.webp';
+    if (item.previewType === 'ai') return '/images/new-hero.webp';
+    if (item.previewType === 'api' || item.previewType === 'devops') return '/images/collab.webp';
     return '/images/ai-sentinel-preview.svg';
   };
 

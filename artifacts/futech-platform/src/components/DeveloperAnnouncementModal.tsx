@@ -60,17 +60,17 @@ export function DeveloperAnnouncementModal({ isOpen, onClose }: DeveloperAnnounc
             {/* Top Meta Strip */}
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-500/40 px-3 py-1 text-xs sm:text-sm font-black text-teal-800 dark:text-teal-300">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-500/40 px-3 py-1 text-xs sm:text-sm font-black text-teal-900 dark:text-teal-200">
                   <Sparkles size={14} className="text-teal-600 dark:text-teal-400" />
                   <span>بيان رسمي ورسالة من القلب</span>
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-500/40 px-3 py-1 text-xs sm:text-sm font-bold text-emerald-800 dark:text-emerald-300">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-500/40 px-3 py-1 text-xs sm:text-sm font-bold text-emerald-900 dark:text-emerald-200">
                   <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                   <span>الموقع متاح للعمل الفعلي • تحت التجربة الحية</span>
                 </span>
               </div>
 
-              <div className="text-xs sm:text-sm font-mono font-black text-slate-400 dark:text-slate-400">
+              <div className="text-xs sm:text-sm font-mono font-black text-slate-600 dark:text-slate-300">
                 FuTech Platform v2.6 🇪🇬
               </div>
             </div>
@@ -80,14 +80,19 @@ export function DeveloperAnnouncementModal({ isOpen, onClose }: DeveloperAnnounc
               {/* Eng. Mina Robir's Real Photo */}
               <div className="relative shrink-0">
                 <div className="h-20 w-20 sm:h-22 sm:w-22 rounded-2xl overflow-hidden ring-4 ring-teal-500/30 shadow-lg shadow-teal-500/20 bg-slate-100 dark:bg-slate-800">
-                  <img
-                    src="/images/owner-google-avatar.png"
-                    alt="المهندس مينا روبير مجدى فوزى"
-                    className="h-full w-full object-cover object-top"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/images/futech-logo.jpg';
-                    }}
-                  />
+                  <picture>
+                    <source type="image/webp" srcSet="/images/owner-google-avatar.webp" />
+                    <img
+                      src="/images/owner-google-avatar.png"
+                      alt="المهندس مينا روبير مجدى فوزى"
+                      width="88"
+                      height="88"
+                      className="h-full w-full object-cover object-top"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/images/futech-logo.jpg';
+                      }}
+                    />
+                  </picture>
                 </div>
                 <div className="absolute -bottom-1 -left-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900 text-white text-xs font-black shadow-xs">
                   ✓

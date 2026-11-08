@@ -628,11 +628,18 @@ export function HomePage({ store, go, notify, onOpenAuth, onSwitchUser, update, 
                   className="grid items-center gap-10 rounded-3xl border border-slate-200/90 bg-white p-6 shadow-xl lg:grid-cols-12 lg:p-10"
                 >
                   <div className="lg:col-span-6">
-                    <img
-                      src="/images/collab.jpg"
-                      alt="فريق التطوير وسير العمل"
-                      className="h-80 w-full rounded-2xl object-cover shadow-lg md:h-96"
-                    />
+                    <picture>
+                      <source type="image/webp" srcSet="/images/collab.webp" />
+                      <img
+                        src="/images/collab.jpg"
+                        alt="فريق التطوير وسير العمل"
+                        loading="lazy"
+                        decoding="async"
+                        width="1024"
+                        height="571"
+                        className="h-80 w-full rounded-2xl object-cover shadow-lg md:h-96"
+                      />
+                    </picture>
                   </div>
 
                   <div className="lg:col-span-6">
