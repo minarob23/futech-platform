@@ -105,7 +105,7 @@ export async function fetchDevelopers(): Promise<Developer[]> {
         category: (p.category as any) || 'fullstack',
         location: isMina ? 'القاهرة، جمهورية مصر العربية' : (p.country || 'مصر'),
         country: isMina ? 'مصر' : (p.country || 'مصر'),
-        hourlyRate: Number(p.hourly_rate) || 200,
+        hourlyRate: isMina ? 1750 : (Number(p.hourly_rate) || 200),
         fqs: realFqs,
         fqsBreakdown: {
           completionRate: hasHistory ? 100 : 0,

@@ -374,7 +374,7 @@ export default function App() {
           currencyCode: isMina ? 'EGP' : (currentProfile.country === 'السعودية' ? 'SAR' : (existing?.currencyCode || 'EGP')),
           bio: isMina ? 'المطور والمالك الأوحد لمنصة فوتيك، مهندس برمجيات وتطوير شامل (Full-Stack Engineer) ومتحكم بصلاحيات الإدارة وحوكمة المنصة.' : (currentProfile.bio || existing?.bio),
           githubUrl: currentProfile.github_url || existing?.githubUrl || undefined,
-          hourlyRate: isMina ? 200 : (currentProfile.hourly_rate || existing?.hourlyRate),
+          hourlyRate: isMina ? 1750 : (currentProfile.hourly_rate || existing?.hourlyRate),
           skills: currentProfile.skills || existing?.skills || [],
           verified: true,
           createdAt: existing?.createdAt || new Date().toISOString().split('T')[0],

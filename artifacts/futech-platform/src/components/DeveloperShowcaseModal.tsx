@@ -295,7 +295,7 @@ export function DeveloperShowcaseModal({
                   <div className="text-right">
                     <div className="text-xs text-slate-300 font-semibold">سعر الساعة:</div>
                     <div className="text-lg font-black text-white">
-                      {developer.hourlyRate} <span className="text-xs text-teal-300 font-normal">{getDeveloperCurrency(developer)} / ساعة</span>
+                      {developer.hourlyRate.toLocaleString('ar-EG')} <span className="text-xs text-teal-300 font-normal">{getDeveloperCurrency(developer)} / ساعة</span>{(developer.name.includes('مينا') || developer.level?.includes('مؤسس')) && <span className="mr-1.5 text-[10px] font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-md border border-amber-400/30">(~35$)</span>}
                     </div>
                   </div>
                 </div>
@@ -867,7 +867,7 @@ export function DeveloperShowcaseModal({
             <div className="flex items-center gap-3">
               <span className="text-xs text-slate-500">سعر الساعة المقترح:</span>
               <span className="text-base font-black text-slate-900 dark:text-white">
-                {developer.hourlyRate} {getDeveloperCurrency(developer)} / ساعة
+                {developer.hourlyRate.toLocaleString('ar-EG')} {getDeveloperCurrency(developer)} / ساعة{(developer.name.includes('مينا') || developer.level?.includes('مؤسس')) ? ' (~35$)' : ''}
               </span>
             </div>
 

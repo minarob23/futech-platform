@@ -489,7 +489,12 @@ export function HomePage({ store, go, notify, onOpenAuth, onSwitchUser, update, 
                   <div className="mt-5 border-t border-slate-100 pt-3 dark:border-slate-800">
                     <div className="flex items-center justify-between mb-2.5">
                       <span className="text-xs font-black text-[#203d62] dark:text-teal-300">
-                        {dev.hourlyRate} <span className="text-[10px] text-slate-500 font-normal">{getDeveloperCurrency(dev)}/س</span>
+                        {dev.hourlyRate.toLocaleString('ar-EG')} <span className="text-[10px] text-slate-500 font-normal">{getDeveloperCurrency(dev)}/س</span>
+                        {isOwner && (
+                          <span className="mr-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded-md border border-amber-400/30">
+                            (~35$)
+                          </span>
+                        )}
                       </span>
                       <span className="text-[10px] text-slate-400 font-bold">
                         {dev.completedProjects} مشاريع منجزة

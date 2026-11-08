@@ -173,7 +173,7 @@ export function buildOwnerUser(activeEmail?: string, currentAvatar?: string): Us
     bio: 'المطور والمالك الأوحد لمنصة فوتيك، مهندس برمجيات وتطوير شامل (Full-Stack Engineer) ومتحكم بصلاحيات الإدارة وحوكمة المنصة.',
     skills: ['React 19', 'TypeScript', 'Node.js', 'PostgreSQL', 'Docker', 'OWASP Security', 'Cloud Architecture'],
     fqs: 100,
-    hourlyRate: 200,
+    hourlyRate: 1750,
     verified: true,
     createdAt: '2024-01-01',
   };
@@ -195,7 +195,7 @@ export function buildOwnerDeveloper(): Developer {
     category: 'fullstack',
     location: 'القاهرة، جمهورية مصر العربية',
     country: 'مصر',
-    hourlyRate: 200,
+    hourlyRate: 1750,
     fqs: 99,
     fqsBreakdown: {
       completionRate: 100,
