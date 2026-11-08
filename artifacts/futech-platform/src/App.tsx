@@ -405,6 +405,38 @@ export default function App() {
     }
   }, [auth.profile, auth.session]);
 
+  // Handle post-OAuth redirect based on role or owner status
+  useEffect(() => {
+    if (!store.currentUser) return;
+
+    if (typeof window !== 'undefined') {
+      const isOAuthPending =
+        sessionStorage.getItem('futech_oauth_pending_redirect') === 'true' ||
+        window.location.hash.includes('access_token') ||
+        window.location.search.includes('code=');
+
+      if (isOAuthPending) {
+        sessionStorage.removeItem('futech_oauth_pending_redirect');
+
+        const isOwner =
+          store.currentUser.role === 'owner' ||
+          isOwnerIdentity(store.currentUser) ||
+          isOwnerEmail(store.currentUser.email);
+
+        if (isOwner) {
+          notify('مرحباً بك يا بشمهندس مينا! تم التعرف على حسابك كمالك المنصة والدخول بنجاح 👑');
+          setLocation('/owner-dashboard');
+        } else if (store.currentUser.role === 'developer') {
+          notify(`أهلاً بك يا ${store.currentUser.name}! تم تسجيل دخولك بنجاح كمطور برمجيات 💻`);
+          setLocation('/dashboard');
+        } else if (store.currentUser.role === 'client') {
+          notify(`أهلاً بك يا ${store.currentUser.name}! تم تسجيل دخولك بنجاح كصاحب عمل 🏢`);
+          setLocation('/client-dashboard');
+        }
+      }
+    }
+  }, [store.currentUser, setLocation]);
+
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(store));

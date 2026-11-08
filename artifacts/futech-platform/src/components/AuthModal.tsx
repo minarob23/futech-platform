@@ -263,23 +263,32 @@ export function AuthModal({
         showModalSuccess('جاري تسجيل الدخول السريع وتفعيل الحساب عبر Google...');
         // Fallback to instant Google Demo Sign In so user experience is smooth and uninterrupted
         setTimeout(async () => {
-          const ownerEmailFallback = OWNER_DEFAULT_EMAIL;
+          const candidateEmail = sanitizeEmail(loginEmail);
+          const hasOwnerCandidate = isOwnerEmail(candidateEmail);
+          const demoEmail = hasOwnerCandidate
+            ? candidateEmail
+            : (targetRole === 'developer' ? 'dev.google@futech.com' : 'client.google@futech.com');
+          const demoName = hasOwnerCandidate
+            ? OWNER_FULL_NAME
+            : (targetRole === 'developer' ? 'مطور برمجيات معتمد (Google)' : 'صاحب أعمال ومشاريع (Google)');
+          const demoRole = hasOwnerCandidate ? 'owner' : targetRole;
+
           const demoRes = await auth.signInWithDemoGoogle(
-            isOwnerTarget ? 'owner' : targetRole,
-            isOwnerTarget ? ownerEmailFallback : undefined,
-            isOwnerTarget ? OWNER_FULL_NAME : undefined
+            demoRole,
+            demoEmail,
+            demoName
           );
           if (!demoRes.error) {
             showModalSuccess('تم الدخول بنجاح بحساب Google! جاري نقلك...');
             const p = auth.profile;
-            const activeEmail = auth.session?.user?.email || (isOwnerTarget ? ownerEmailFallback : (targetRole === 'developer' ? 'dev.google@futech.com' : 'client.google@futech.com'));
-            const isOwner = isOwnerTarget || isOwnerEmail(activeEmail) || p?.role === 'owner';
+            const activeEmail = auth.session?.user?.email || demoEmail;
+            const isOwner = hasOwnerCandidate || isOwnerEmail(activeEmail) || p?.role === 'owner';
 
             const u: User = isOwner
               ? buildOwnerUser(activeEmail, p?.avatar_url || undefined)
               : {
                   id: p?.id || 'goog_' + Date.now().toString(36),
-                  name: p?.full_name || (targetRole === 'developer' ? 'مطور Google معتمد' : 'عميل Google معتمد'),
+                  name: p?.full_name || demoName,
                   email: activeEmail,
                   role: targetRole as any,
                   avatar: '',
@@ -1052,67 +1061,35 @@ export function AuthModal({
                   (الحسابات المسجلة مسبقاً ستتصل مباشرة بدورها المعتمد)
                 </p>
 
-                <div className="mt-5 space-y-2.5">
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowGoogleRoleModal(false);
-                        handleGoogleAuth('developer');
-                      }}
-                      className="group flex flex-col items-center justify-center rounded-2xl border-2 border-slate-200 bg-white p-3.5 transition hover:border-[#2798a0] hover:bg-[#eef8f9] hover:shadow-md active:scale-98 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-teal-500 dark:hover:bg-teal-950/40"
-                    >
-                      <div className="grid h-10 w-10 place-items-center rounded-2xl bg-teal-50 text-[#2798a0] transition group-hover:scale-110 dark:bg-teal-950/60 dark:text-teal-300">
-                        <Code2 size={20} />
-                      </div>
-                      <span className="mt-2 text-xs font-black text-slate-900 dark:text-white">مطور برمجيات</span>
-                      <span className="mt-0.5 text-[10px] font-medium text-slate-400">للمهندسين والمطورين</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowGoogleRoleModal(false);
-                        handleGoogleAuth('client');
-                      }}
-                      className="group flex flex-col items-center justify-center rounded-2xl border-2 border-slate-200 bg-white p-3.5 transition hover:border-[#2798a0] hover:bg-[#eef8f9] hover:shadow-md active:scale-98 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-teal-500 dark:hover:bg-teal-950/40"
-                    >
-                      <div className="grid h-10 w-10 place-items-center rounded-2xl bg-teal-50 text-[#2798a0] transition group-hover:scale-110 dark:bg-teal-950/60 dark:text-teal-300">
-                        <Building2 size={20} />
-                      </div>
-                      <span className="mt-2 text-xs font-black text-slate-900 dark:text-white">صاحب عمل أو شركة</span>
-                      <span className="mt-0.5 text-[10px] font-medium text-slate-400">لنشر المشاريع والتوظيف</span>
-                    </button>
-                  </div>
-
-                  {/* Owner Quick Access via Google */}
+                <div className="mt-5 grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => {
                       setShowGoogleRoleModal(false);
-                      handleGoogleAuth('owner');
+                      handleGoogleAuth('developer');
                     }}
-                    className="group flex w-full items-center justify-between rounded-2xl border-2 border-amber-300 bg-gradient-to-r from-amber-50/90 via-amber-50/50 to-white p-3 transition hover:border-amber-500 hover:bg-amber-100/60 hover:shadow-md active:scale-[0.99] dark:border-amber-600/40 dark:bg-amber-950/30 dark:hover:border-amber-500 text-right"
+                    className="group flex flex-col items-center justify-center rounded-2xl border-2 border-slate-200 bg-white p-4 transition hover:border-[#2798a0] hover:bg-[#eef8f9] hover:shadow-md active:scale-98 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-teal-500 dark:hover:bg-teal-950/40"
                   >
-                    <div className="flex items-center gap-2.5">
-                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-500 text-white shadow-xs">
-                        <Crown size={18} />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-black text-amber-950 dark:text-amber-200">
-                            مالك المنصة الوحيد (مينا روبير مجدى فوزى)
-                          </span>
-                          <span className="rounded-full bg-amber-200/90 px-1.5 py-0.2 text-[9px] font-black text-amber-900 dark:bg-amber-900 dark:text-amber-200">
-                            👑 المالك
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-amber-800/80 dark:text-amber-300/80 font-medium">
-                          دخول فوري بحسابات المالك (menarobir246rm@gmail.com أو الحسابات المرتبطة)
-                        </p>
-                      </div>
+                    <div className="grid h-12 w-12 place-items-center rounded-2xl bg-teal-50 text-[#2798a0] transition group-hover:scale-110 dark:bg-teal-950/60 dark:text-teal-300">
+                      <Code2 size={24} />
                     </div>
-                    <ArrowLeft size={15} className="text-amber-600 shrink-0 transition group-hover:-translate-x-1" />
+                    <span className="mt-2.5 text-xs font-black text-slate-900 dark:text-white">مطور برمجيات</span>
+                    <span className="mt-0.5 text-[10px] font-medium text-slate-400">للمهندسين والمطورين</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowGoogleRoleModal(false);
+                      handleGoogleAuth('client');
+                    }}
+                    className="group flex flex-col items-center justify-center rounded-2xl border-2 border-slate-200 bg-white p-4 transition hover:border-[#2798a0] hover:bg-[#eef8f9] hover:shadow-md active:scale-98 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-teal-500 dark:hover:bg-teal-950/40"
+                  >
+                    <div className="grid h-12 w-12 place-items-center rounded-2xl bg-teal-50 text-[#2798a0] transition group-hover:scale-110 dark:bg-teal-950/60 dark:text-teal-300">
+                      <Building2 size={24} />
+                    </div>
+                    <span className="mt-2.5 text-xs font-black text-slate-900 dark:text-white">صاحب عمل أو شركة</span>
+                    <span className="mt-0.5 text-[10px] font-medium text-slate-400">لنشر المشاريع والتوظيف</span>
                   </button>
                 </div>
 

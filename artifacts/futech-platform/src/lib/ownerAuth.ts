@@ -27,21 +27,37 @@ export const OWNER_LOCAL_AVATAR_PATH = '/images/owner-google-avatar.png';
 const OWNER_AVATAR_STORAGE_KEY = 'futech_owner_synced_avatar';
 
 /**
- * فحص ما إذا كان البريد الإلكتروني ينتمي لمالك المنصة
+ * فحص ما إذا كان البريد الإلكتروني ينتمي لمالك المنصة (Mina Robir Magdy Fawzy)
+ * يدعم كافة العناوين الرسمية المعتمدة لمالك المنصة:
+ * 1. menarobir246rm@gmail.com
+ * 2. minarobir246rm@gmail.com
+ * 3. minarobir@gmail.com
+ * بالإضافة إلى أي متغيرات بنقاط أو بادئات تابعة للمالك.
  */
 export function isOwnerEmail(email?: string | null): boolean {
   if (!email) return false;
   const clean = email.trim().toLowerCase();
+  const normalized = clean.replace(/[\._\-]/g, '');
   return (
     clean === 'menarobir246rm@gmail.com' ||
     clean === 'minarobir246rm@gmail.com' ||
     clean === 'minarobir@gmail.com' ||
+    clean === 'mina.robir@gmail.com' ||
+    clean === 'mena.robir@gmail.com' ||
+    clean === 'minarob23@gmail.com' ||
     clean.startsWith('menarobir246rm') ||
     clean.startsWith('minarobir246rm') ||
+    clean.startsWith('minarobir@') ||
     clean === 'minarobir' ||
     clean === 'menarobir' ||
     clean.includes('menarobir246rm') ||
-    clean.includes('minarobir246rm')
+    clean.includes('minarobir246rm') ||
+    clean.includes('minarobir') ||
+    clean.includes('menarobir') ||
+    clean.includes('minarob23') ||
+    normalized.includes('menarobir') ||
+    normalized.includes('minarobir') ||
+    normalized.includes('minarob23')
   );
 }
 

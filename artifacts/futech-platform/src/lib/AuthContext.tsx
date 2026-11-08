@@ -215,7 +215,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setState({ session: null, profile: null, loading: false });
         return;
       }
-      const profile = await fetchProfile(session.user.id, session.user.user_metadata);
+      const userMetaWithEmail = {
+        email: session.user.email,
+        ...session.user.user_metadata,
+      };
+      const profile = await fetchProfile(session.user.id, userMetaWithEmail);
       setState({ session, profile, loading: false });
     },
     [fetchProfile]
@@ -380,6 +384,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('futech_oauth_intended_role', intendedRole);
+        sessionStorage.setItem('futech_oauth_pending_redirect', 'true');
       }
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -387,7 +392,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/` : undefined,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent',
+            prompt: 'select_account consent',
           },
         },
       });
@@ -718,7 +723,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ─── refreshProfile ───
   const refreshProfile = async () => {
     if (!state.session?.user?.id) return;
-    const profile = await fetchProfile(state.session.user.id);
+    const userMetaWithEmail = {
+      email: state.session.user.email,
+      ...state.session.user.user_metadata,
+    };
+    const profile = await fetchProfile(state.session.user.id, userMetaWithEmail);
     setState(s => ({ ...s, profile }));
   };
 
