@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'wouter';
 import {
@@ -27,10 +27,21 @@ interface HomePageProps {
   onOpenAuth?: (role?: 'developer' | 'client', mode?: 'login' | 'register', portal?: 'members' | 'admin' | 'owner') => void;
   onSwitchUser?: (user: User) => void;
   update?: (key: keyof Store, value: any) => void;
+  isLandingVisible?: boolean;
 }
 
-export function HomePage({ store, go, notify, onOpenAuth, onSwitchUser, update }: HomePageProps) {
-  const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(true);
+export function HomePage({ store, go, notify, onOpenAuth, onSwitchUser, update, isLandingVisible = true }: HomePageProps) {
+  const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(false);
+
+  // Automatically open the announcement modal ONLY when the landing page actually appears
+  useEffect(() => {
+    if (isLandingVisible) {
+      const timer = setTimeout(() => {
+        setIsAnnouncementOpen(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isLandingVisible]);
   const [activeFeatureTab, setActiveFeatureTab] = useState<'workflow' | 'fqs' | 'community'>('workflow');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [selectedDevShowcase, setSelectedDevShowcase] = useState<Developer | null>(null);

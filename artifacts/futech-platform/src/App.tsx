@@ -499,6 +499,7 @@ export default function App() {
               update={update}
               go={setLocation}
               notify={notify}
+              isLandingVisible={!showDaySplash}
               onOpenAuth={(role, mode, portal) => {
                 if (store.currentUser) {
                   const target = portal === 'owner' || store.currentUser.role === 'owner'
