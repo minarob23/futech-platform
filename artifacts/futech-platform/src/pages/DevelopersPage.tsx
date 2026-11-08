@@ -7,6 +7,7 @@ import {
   LayoutGrid, List, Play, Image as ImageIcon
 } from 'lucide-react';
 import { Developer, Project, Conversation, Store, PortfolioItem } from '../types';
+import { buildOwnerDeveloper } from '../lib/ownerAuth';
 import { DeveloperShowcaseModal } from '../components/DeveloperShowcaseModal';
 import { LiveProjectPreviewModal } from '../components/LiveProjectPreviewModal';
 import { getDeveloperCurrency } from '../data/countries';
@@ -104,7 +105,13 @@ export function DevelopersPage({ store, update, notify, go }: DevelopersPageProp
 
   // Filtered & Sorted developers
   const filteredDevelopers = useMemo(() => {
-    return store.developers
+    const ownerDev = buildOwnerDeveloper();
+    const otherDevs = (store.developers || []).filter(
+      (d) => !d.name?.includes('مينا') && d.id !== 'usr-owner-mina' && d.id !== 'e75a3a4f-b00b-458d-98a5-16d53922e54b'
+    );
+    const allDevs = [ownerDev, ...otherDevs];
+
+    return allDevs
       .filter((dev) => {
         // Search term
         const matchesSearch =
@@ -145,6 +152,10 @@ export function DevelopersPage({ store, update, notify, go }: DevelopersPageProp
         return matchesSearch && matchesCategory && matchesAvailability && matchesLevel && matchesFqs && matchesRate;
       })
       .sort((a, b) => {
+        const aIsOwner = a.name.includes('مينا') || a.level?.includes('مؤسس');
+        const bIsOwner = b.name.includes('مينا') || b.level?.includes('مؤسس');
+        if (aIsOwner) return -1;
+        if (bIsOwner) return 1;
         if (sortBy === 'fqs') return b.fqs - a.fqs;
         if (sortBy === 'rating') return b.rating - a.rating;
         if (sortBy === 'projects') return b.completedProjects - a.completedProjects;

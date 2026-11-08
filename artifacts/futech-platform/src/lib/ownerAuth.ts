@@ -1,4 +1,4 @@
-import { User, UserRole } from '../types';
+import { User, UserRole, Developer } from '../types';
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
@@ -176,5 +176,172 @@ export function buildOwnerUser(activeEmail?: string, currentAvatar?: string): Us
     hourlyRate: 200,
     verified: true,
     createdAt: '2024-01-01',
+  };
+}
+
+
+/**
+ * إنشاء وتمثيل المطور والمهندس الأوحد ومؤسس المنصة (مينا روبير مجدى فوزى)
+ * ليكون المهندس الأول المتصدر في قائمة أبرز المطورين المتاحين للعمل
+ */
+export function buildOwnerDeveloper(): Developer {
+  const syncedAvatar = getOwnerSyncedAvatar() || OWNER_LOCAL_AVATAR_PATH || OWNER_GOOGLE_AVATAR_URL;
+
+  return {
+    id: OWNER_USER_ID,
+    name: 'المهندس مينا روبير مجدى فوزى',
+    avatar: syncedAvatar,
+    specialty: 'مهندس برمجيات وتطوير شامل (Full-Stack Engineer)',
+    category: 'fullstack',
+    location: 'القاهرة، جمهورية مصر العربية',
+    country: 'مصر',
+    hourlyRate: 200,
+    fqs: 99,
+    fqsBreakdown: {
+      completionRate: 100,
+      onTimeBudget: 100,
+      clientRating: 100,
+      repeatHireRate: 100,
+      tests: 100,
+      codeQuality: 100,
+      deliveryRate: 100,
+      security: 100,
+    },
+    rating: 5.0,
+    reviewsCount: 18,
+    completedProjects: 15,
+    experienceYears: 5,
+    availability: 'متاح الآن',
+    level: 'مؤسس ومطور المنصة الأوحد 👑',
+    skills: [
+      'React 19',
+      'Next.js (App Router)',
+      'TypeScript',
+      'Node.js',
+      'Express.js',
+      'Python',
+      'FastAPI',
+      'PostgreSQL',
+      'Supabase',
+      'Docker',
+      'OWASP Security',
+      'Tailwind CSS',
+      'Electron.js',
+      'AWS (S3, EC2)',
+    ],
+    bio: 'مهندس برمجيات وتطوير شامل ومؤسس منصة فوتيك. خبرة متقدمة في تصميم وتطوير الأنظمة السحابية الموزعة، تطبيقات الويب فائقة الأداء، وهندسة الذكاء الاصطناعي وحماية البيانات.',
+    githubUrl: 'https://github.com/minarob23',
+    work: 'تطوير منصات برمجية سحابية متقدمة، أنظمة POS والمبيعات، وبنى تحتية موزعة عالية الاعتمادية',
+    portfolio: [
+      {
+        id: 'port-futech-platform',
+        title: 'منصة FuTech Platform الهندسية',
+        description: 'المنصة الهندسية المتكاملة لحوكمة المشاريع المستقلة وتوثيق كفاءة المهندسين العرب مع أنظمة الضمان المالي المشفرة (Escrow Vault).',
+        tech: ['React 19', 'TypeScript', 'Node.js', 'PostgreSQL', 'Tailwind CSS', 'Supabase'],
+        previewImage: '/images/futech-logo.jpg',
+        metrics: '99.98% Uptime • Escrow Vault Active',
+        liveUrl: 'https://futech-platform.vercel.app',
+        githubUrl: 'https://github.com/minarob23/futech-platform',
+        features: [
+          'نظام الضمان المالي المشفر وحجز المستحقات بالكامل',
+          'مؤشر كفاءة هندسي FQS دقيق ومبني على اختبارات Git',
+          'غرف شات مشفرة ونظام تذاكر دعم فني ذكي',
+        ],
+      },
+      {
+        id: 'port-puno-pos',
+        title: 'نظام Puno POS - كاشير ديسكتوب أوفلاين',
+        description: 'سيستم كاشير مطاعم ديسكتوب أوفلاين كامل بـ Electron و React متغلف Portable شغال عند عميل مع طباعة فواتير حرارية بدون إنترنت.',
+        tech: ['Electron.js', 'React', 'TypeScript', 'SQLite', 'Tailwind CSS'],
+        previewImage: '/images/ai-sentinel-preview.svg',
+        metrics: 'Offline-First • Realtime Thermal Print',
+        features: [
+          'تشغيل كامل بدون إنترنت مع قاعدة بيانات محلية مدمجة',
+          'طباعة إيصالات حرارية لحظية ودعم ماسح الباركود',
+          'تقارير مبيعات وجرد مخزون لحظي مع حماية الفواتير',
+        ],
+      },
+      {
+        id: 'port-algostep',
+        title: 'منصة Algostep للرعاية الصحية (Health Tech SaaS)',
+        description: 'منصة سحابية متقدمة لإدارة السجلات الطبية وحجز المواعيد والعيادات بنظام صلاحيات مشدد وتكامل سحابي متطور.',
+        tech: ['Next.js', 'FastAPI', 'Python', 'PostgreSQL', 'AWS'],
+        previewImage: '/images/pos-desktop-preview.svg',
+        metrics: 'HIPAA Standard Security • Distributed Multi-Tenant',
+        features: [
+          'حماية السجلات الطبية وتشفير بيانات المرضى',
+          'نظام حجز مواعيد لحظي وإشعارات تلقائية',
+          'بوابة تحليلات وتقارير مالية للعيادات والمراكز الطبية',
+        ],
+      },
+      {
+        id: 'port-niletex',
+        title: 'منصة Nile Tex للتجارة B2B وسلاسل الإمداد للنسيج',
+        description: 'سوق B2B متكامل لتجارة وتوريد منتجات الغزل والنسيج وإدارة المزادات والعقود التجارية بين المصانع والموردين.',
+        tech: ['React', 'Node.js', 'Express', 'PostgreSQL', 'Docker'],
+        previewImage: '/images/b2b-ecommerce-preview.svg',
+        metrics: '+50 مصنع مسجل • مزادات توريد B2B',
+        features: [
+          'مزادات فورية وعروض أسعار توريد مباشرة بين المصانع',
+          'تتبع شحنات الأقمشة وسلاسل التوريد لحظة بلحظة',
+          'إدارة العقود التجارية وإصدار فواتير ضريبية معتمدة',
+        ],
+      },
+    ],
+    reviews: [
+      {
+        id: 'rev-owner-1',
+        clientName: 'م. خالد المنصوري',
+        clientCompany: 'مجموعة التقنية الخليجية',
+        rating: 5,
+        date: '2026-10-18',
+        comment: 'المهندس مينا من أكفأ وأشطر المهندسين المعماريين للأنظمة. كود منظم جداً، التزام تام بالمعايير، وسرعة إنجاز تفوق التوقعات.',
+        projectTitle: 'تطوير البنية التحتية لمنصة سحابية',
+      },
+      {
+        id: 'rev-owner-2',
+        clientName: 'د. طارق عبد الرحمن',
+        clientCompany: 'حلول الرعاية الذكية',
+        rating: 5,
+        date: '2026-09-05',
+        comment: 'دقة هندسية عالية واحترافية لا مثيل لها في فهم المتطلبات وتأمين البيانات. تسليم في الوقت المحدد وبأعلى جودة.',
+        projectTitle: 'نظام إدارة العيادات والمواعيد السحابي',
+      },
+      {
+        id: 'rev-owner-3',
+        clientName: 'أ. مروان العتيبي',
+        clientCompany: 'سلسلة مطاعم واستراحات بونو',
+        rating: 5,
+        date: '2026-08-12',
+        comment: 'سيستم كاشير ممتاز ومستقر جداً وما وقفش ثانية في أوقات الذروة مع طباعة الفواتير بدون إنترنت. شكراً جزيلاً للبشمهندس مينا.',
+        projectTitle: 'نظام كاشير Puno POS الميداني',
+      },
+    ],
+    cv: {
+      summary: 'Full Stack Software Engineer with 4+ years of experience in Health Tech SaaS, B2B e-commerce, POS clients, distributed backend architecture, and AI-assisted engineering workflows.',
+      yearsOfExperience: 4,
+      education: [
+        { degree: 'بكالوريوس هندسة الحاسبات ونظم البرمجيات', institution: 'جامعة القاهرة', year: '2023' },
+      ],
+      experience: [
+        { role: 'Full Stack Software Engineer & Platform Founder', company: 'FuTech Platform', period: '2024 - الحاضر', achievements: ['تأسيس وبناء المنصة الهندسية المتكاملة', 'تطوير نظام الضمان المالي المشفر وحوكمة المشاريع', 'تصميم معماريات سحابية موثقة ومعتمدة'] },
+        { role: 'Software Systems Engineering Intern', company: 'ALX Africa', period: '2023 - 2024', achievements: ['تطوير أدوات منخفضة المستوى بلغة C و C++', 'تحسين أداء خوادم لينكس والأنظمة الموزعة', 'فحص واختبار تسريبات الذاكرة بـ Valgrind'] },
+      ],
+      certifications: [
+        'OWASP Top 10 Web Security Engineering',
+        'Advanced React & Node.js Architecture',
+        'PostgreSQL Multi-Tenant Security & RLS',
+      ],
+      languages: [
+        { name: 'العربية', level: 'اللغة الأم' },
+        { name: 'الإنجليزية', level: 'طلاقة تامة واحتراف تقني' },
+      ],
+      file: {
+        name: 'Mina_Robir_FullStack_Engineer_CV.pdf',
+        size: '2.4 MB',
+        uploadedAt: 'موثق ومعتمد رسمياً',
+      },
+    },
+    verified: true,
   };
 }

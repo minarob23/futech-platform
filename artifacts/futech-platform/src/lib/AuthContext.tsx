@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { supabase } from './supabaseClient';
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { sanitizeEmail, isValidEmailFormat } from './emailUtils';
+import { getRateLimitStatus, recordFailedAttempt, recordSuccessfulAuth, formatRemainingTime } from './rateLimiter';
 import {
   isOwnerEmail,
   isOwnerIdentity,
@@ -245,6 +246,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState(s => ({ ...s, loading: true }));
     const cleanEmail = sanitizeEmail(email);
 
+    // Rate Limiting check at API / Context level
+    const rateLimit = getRateLimitStatus(cleanEmail);
+    if (rateLimit.isBlocked) {
+      setState(s => ({ ...s, loading: false }));
+      return {
+        error: `⛔ تم حظر تسجيل الدخول مؤقتاً لتجاوز 5 محاولات خاطئة. يرجى الانتظار (${formatRemainingTime(rateLimit.remainingSeconds)}) قبل المحاولة مجدداً.`,
+      };
+    }
+
     // 0. فحص خاص لمالك المنصة مينا روبير مجدى فوزى بكافة إيميلاته الثلاثة
     if (isOwnerEmail(cleanEmail)) {
       const ownerAvatar = getOwnerSyncedAvatar();
@@ -277,6 +287,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (!ownerAuthErr && ownerAuthData?.session) {
+        recordSuccessfulAuth(cleanEmail);
         await handleSession(ownerAuthData.session);
         return { error: null };
       }
@@ -299,6 +310,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('futech_auth_profile', JSON.stringify(ownerProfile));
       } catch {}
 
+      recordSuccessfulAuth(cleanEmail);
       setState({
         session: simulatedSession,
         profile: ownerProfile,
@@ -310,6 +322,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // 1. محاولة تسجيل الدخول عبر Supabase Auth الرسمية
     const { data, error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
     if (!error && data.session) {
+      recordSuccessfulAuth(cleanEmail);
       await handleSession(data.session);
       return { error: null };
     }
@@ -362,6 +375,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             localStorage.setItem('futech_auth_profile', JSON.stringify(finalProfile));
           } catch {}
 
+          recordSuccessfulAuth(cleanEmail);
           setState({
             session: simulatedSession,
             profile: finalProfile,
@@ -374,8 +388,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.warn('[AuthContext] Local registry signIn check warning:', e);
     }
 
+    const failRate = recordFailedAttempt(cleanEmail);
     setState(s => ({ ...s, loading: false }));
-    return { error: translateAuthError(error ? error.message : 'Invalid login credentials') };
+    if (failRate.isBlocked) {
+      return {
+        error: `⛔ تم حظر تسجيل الدخول مؤقتاً لمدة 15 دقيقة لتجاوز 5 محاولات خاطئة متتالية لدواعي الأمان.`,
+      };
+    }
+    const baseError = translateAuthError(error ? error.message : 'Invalid login credentials');
+    const warning = failRate.attempts >= 3 ? ` (تحذير: متبقي ${failRate.remainingAttempts} محاولات قبل الحظر)` : '';
+    return { error: `${baseError}${warning}` };
   };
 
   // ─── signInWithGoogle ───

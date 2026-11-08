@@ -9,6 +9,7 @@ import {
   HeartHandshake, Globe2, Building2, Play, Image as ImageIcon
 } from 'lucide-react';
 import { Store, Project, Developer, PortfolioItem, User } from '../types';
+import { buildOwnerDeveloper } from '../lib/ownerAuth';
 import { Footer } from '../components/Footer';
 import { FloatingControls } from '../components/FloatingControls';
 import { ThemeToggle } from '../components/ThemeToggle';
@@ -50,7 +51,12 @@ export function HomePage({ store, go, notify, onOpenAuth, onSwitchUser, update, 
   const [livePreviewDev, setLivePreviewDev] = useState<Developer | null>(null);
 
   const availableProjects = store.projects.filter((p) => p.status === 'متاح').slice(0, 3);
-  const topDevelopers = store.developers.slice(0, 4);
+  const ownerDev = buildOwnerDeveloper();
+  const otherDevs = (store.developers || []).filter(
+    (d) => !d.name?.includes('مينا') && d.id !== 'usr-owner-mina' && d.id !== 'e75a3a4f-b00b-458d-98a5-16d53922e54b'
+  );
+  const allDevsWithMinaFirst = [ownerDev, ...otherDevs];
+  const topDevelopers = allDevsWithMinaFirst.slice(0, 4);
 
   const stats = [
     { label: 'مشاريع تقنية موثقة', value: store.projects.length > 0 ? `+${store.projects.length}` : '0', detail: 'مسجلة وموثقة في المنصة' },
@@ -367,7 +373,9 @@ export function HomePage({ store, go, notify, onOpenAuth, onSwitchUser, update, 
 
           {topDevelopers.length > 0 ? (
             <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {topDevelopers.map((dev, idx) => (
+              {topDevelopers.map((dev, idx) => {
+                const isOwner = dev.name.includes('مينا') || dev.level?.includes('المالك') || dev.level?.includes('مؤسس');
+                return (
                 <motion.div
                   key={dev.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -375,7 +383,11 @@ export function HomePage({ store, go, notify, onOpenAuth, onSwitchUser, update, 
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: idx * 0.1 }}
                   whileHover={{ y: -5 }}
-                  className="flex flex-col justify-between rounded-3xl border border-slate-200/90 bg-white p-5 shadow-xs transition hover:border-[#5ec5cb] hover:shadow-xl hover:shadow-slate-200/50"
+                  className={`flex flex-col justify-between rounded-3xl p-5 shadow-xs transition hover:shadow-xl hover:shadow-slate-200/50 ${
+                    isOwner
+                      ? 'border-2 border-amber-400 bg-gradient-to-b from-amber-50/50 via-white to-white dark:from-amber-950/20 dark:via-slate-900 dark:to-slate-900 shadow-md ring-1 ring-amber-400/30'
+                      : 'border border-slate-200/90 bg-white hover:border-[#5ec5cb]'
+                  }`}
                 >
                   <div>
                     <div className="flex items-center justify-between">
@@ -393,7 +405,17 @@ export function HomePage({ store, go, notify, onOpenAuth, onSwitchUser, update, 
                         )}
                         <span className="absolute -bottom-1 -left-1 h-3.5 w-3.5 rounded-full border-2 border-white bg-[#37b878]" />
                       </div>
-                      {dev.fqs > 0 && (dev.completedProjects > 0 || dev.reviewsCount > 0) ? (
+                      {isOwner ? (
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[9px] font-black text-amber-900 border border-amber-300 dark:bg-amber-900/40 dark:text-amber-200">
+                            👑 مؤسس المنصة
+                          </span>
+                          <div className="rounded-xl border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-center dark:bg-amber-950/50">
+                            <span className="text-xs font-black text-amber-700 dark:text-amber-300">{dev.fqs}</span>
+                            <span className="block text-[8px] font-bold text-amber-600 dark:text-amber-400">FQS معتمد</span>
+                          </div>
+                        </div>
+                      ) : dev.fqs > 0 && (dev.completedProjects > 0 || dev.reviewsCount > 0) ? (
                         <div className="rounded-xl border border-[#d6f2f3] bg-[#edf8f9] px-2.5 py-1 text-center">
                           <span className="text-xs font-black text-[#1e8992]">{dev.fqs}</span>
                           <span className="block text-[8px] font-bold text-[#35979f]">FQS</span>
@@ -499,7 +521,7 @@ export function HomePage({ store, go, notify, onOpenAuth, onSwitchUser, update, 
                     </div>
                   </div>
                 </motion.div>
-              ))}
+              ); })}
             </div>
           ) : (
             <div className="mt-8 rounded-3xl border border-dashed border-slate-200 bg-white p-10 text-center shadow-xs dark:border-slate-800 dark:bg-slate-900/40">

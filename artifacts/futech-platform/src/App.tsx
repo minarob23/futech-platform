@@ -24,6 +24,7 @@ import {
   getOwnerSyncedAvatar,
   setOwnerSyncedAvatar,
   OWNER_GOOGLE_AVATAR_URL,
+  buildOwnerDeveloper,
 } from './lib/ownerAuth';
 import {
   fetchDevelopers,
@@ -167,9 +168,11 @@ function loadInitialStore(): Store {
       return match ? { ...initDoc, ...match } : initDoc;
     });
     const rawDevs = Array.isArray(parsed.developers) ? parsed.developers : [];
-    const sanitizedDevs = rawDevs.filter((d: any) => {
+    const otherDevs = rawDevs.filter((d: any) => {
       return !d.name?.includes('مينا') && d.id !== 'e75a3a4f-b00b-458d-98a5-16d53922e54b' && !d.level?.includes('المالك');
     });
+    const ownerDev = buildOwnerDeveloper();
+    const sanitizedDevs = [ownerDev, ...otherDevs];
 
     let sanitizedUser = parsed.currentUser && parsed.currentUser.id ? parsed.currentUser : null;
     if (sanitizedUser) {

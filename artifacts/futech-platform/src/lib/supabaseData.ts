@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { validateUploadedFile } from './fileSecurity';
+import { buildOwnerDeveloper } from './ownerAuth';
 import { Developer, Project, UserWallet, WalletTransaction, PortfolioItem, ClientReview, Application } from '../types';
 
 function isValidUuid(id?: string | null): boolean {
@@ -134,15 +135,16 @@ export async function fetchDevelopers(): Promise<Developer[]> {
       };
     });
 
-    // Filter out platform owner/executive management from public developer marketplace
-    const publicDevs = mappedDevs.filter(
+    // Ensure Platform Founder (Eng. Mina Robir) is the first featured engineer
+    const otherDevs = mappedDevs.filter(
       (d) =>
         !d.name.includes('مينا') &&
         d.id !== 'e75a3a4f-b00b-458d-98a5-16d53922e54b' &&
         !d.level?.includes('المالك')
     );
 
-    return publicDevs;
+    const ownerDev = buildOwnerDeveloper();
+    return [ownerDev, ...otherDevs];
   } catch (err) {
     console.error('[supabaseData] fetchDevelopers fatal:', err);
     return [];
