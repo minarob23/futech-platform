@@ -188,6 +188,29 @@ export async function fetchProjects(): Promise<Project[]> {
 }
 
 /**
+ * جلب قائمة العملاء وأصحاب المشاريع الفعليين المسجلين في Supabase
+ */
+export async function fetchClients(): Promise<any[]> {
+  try {
+    const { data: clients, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', 'client')
+      .order('created_at', { ascending: false });
+
+    if (error || !clients) {
+      console.warn('[supabaseData] fetchClients warning:', error?.message);
+      return [];
+    }
+
+    return clients;
+  } catch (err) {
+    console.error('[supabaseData] fetchClients fatal:', err);
+    return [];
+  }
+}
+
+/**
  * جلب محفظة مستخدم محدد مع سجل معاملاتها من Supabase
  */
 export async function fetchUserWallet(userId: string): Promise<UserWallet> {

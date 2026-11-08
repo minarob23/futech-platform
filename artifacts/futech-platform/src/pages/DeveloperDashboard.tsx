@@ -22,9 +22,9 @@ import { validateUploadedFile, getAcceptStringForContext } from '../lib/fileSecu
 import { UserAvatar } from '../components/UserAvatar';
 import { SocialLinksManager } from '../components/SocialLinksManager';
 import { useAuth } from '../lib/AuthContext';
-import { saveProposalToSupabase } from '../lib/supabaseData';
+import { saveProposalToSupabase, fetchClients } from '../lib/supabaseData';
 import { sendBrowserNotification } from '../lib/webPushNotifications';
-import { isOwnerIdentity, getOwnerSyncedAvatar, setOwnerSyncedAvatar, OWNER_GOOGLE_AVATAR_URL } from '../lib/ownerAuth';
+import { isOwnerIdentity, getOwnerSyncedAvatar, setOwnerSyncedAvatar, OWNER_GOOGLE_AVATAR_URL, buildOwnerDeveloper } from '../lib/ownerAuth';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, Legend
@@ -95,7 +95,13 @@ export function DeveloperDashboard({ store, update, notify, go }: DeveloperDashb
       )
     : null;
 
-  const currentDev: Developer = matchedDev
+  const ownerDevObj = isOwner ? buildOwnerDeveloper() : null;
+  const currentDev: Developer = (isOwner && ownerDevObj)
+    ? {
+        ...ownerDevObj,
+        avatar: resolvedAvatar || ownerDevObj.avatar || '',
+      }
+    : matchedDev
     ? {
         ...matchedDev,
         avatar: resolvedAvatar || matchedDev.avatar || '',
@@ -215,239 +221,121 @@ export function DeveloperDashboard({ store, update, notify, go }: DeveloperDashb
     joinedDate: string;
   }
 
-  const SEED_CLIENTS: Omit<ClientCardData, 'projects' | 'totalBudget' | 'openProjectsCount'>[] = [
+  // ─── Real Clients Directory from Supabase & Live Store Projects ───
+  const [realClients, setRealClients] = useState<any[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchClients().then((cls) => {
+      if (isMounted && cls && cls.length > 0) {
+        setRealClients(cls);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const INITIAL_REAL_CLIENTS = [
     {
-      id: 'client-alofok',
-      name: 'مؤسسة الأفق الذكي لتقنية المعلومات',
-      company: 'الأفق الذكي للحوسبة السحابية (Smart Horizon)',
-      country: 'السعودية',
-      city: 'الرياض',
-      verified: true,
-      paymentVerified: true,
-      industry: 'منصات سحابية SaaS وبوابات دفع',
-      category: 'saas',
-      bio: 'مؤسسة رائدة في تطوير المنصات السحابية الموزعة وبوابات الدفع الرقمية في المملكة. نبحث باستمرار عن مهندسين محترفين لتطوير واجهات برمجة التطبيقات (APIs) وهندسة Microservices.',
-      rating: 4.9,
-      reviewsCount: 16,
-      hireRate: 96,
-      joinedDate: 'عضو منذ 2024',
-    },
-    {
-      id: 'client-alnamaa',
-      name: 'مجموعة النماء الرقمية للاستثمار والتقنية',
-      company: 'النماء كابيتال القابضة (Al-Namaa Tech Capital)',
-      country: 'الإمارات',
-      city: 'دبي',
-      verified: true,
-      paymentVerified: true,
-      industry: 'حلول FinTech والذكاء الاصطناعي',
-      category: 'ai',
-      bio: 'مجموعة استثمارية تقنية تطور أنظمة أتمتة مالية، محركات تحليل الائتمان، وخوارزميات كشف الاحتيال الذكية للمتاجر والشركات المالية.',
-      rating: 5.0,
-      reviewsCount: 24,
-      hireRate: 98,
-      joinedDate: 'عضو منذ 2023',
-    },
-    {
-      id: 'client-delta',
-      name: 'شركة الدلتا للأنظمة والتحول الرقمي',
-      company: 'الدلتا للحلول البرمجية المتكاملة',
+      id: '38602c01-06c5-4acc-8c1f-1ee11560a576',
+      full_name: 'كيرلس روبير',
+      company_name: 'مؤسسة مستقلة',
       country: 'مصر',
-      city: 'القاهرة',
-      verified: true,
-      paymentVerified: true,
-      industry: 'أنظمة إدارة سلاسل الإمداد ومخازن ERP',
-      category: 'erp',
-      bio: 'شركة مصرية متخصصة في حوسبة المصانع وسلاسل الإمداد اللوجستية. نعتمد أعلى معايير جودة الكود FQS ونمنح مكافآت إنجاز سريعة للمطورين المتميزين.',
-      rating: 4.8,
-      reviewsCount: 11,
-      hireRate: 93,
-      joinedDate: 'عضو منذ 2024',
+      avatar_url: '',
+      role: 'client',
+      bio: 'صاحب أعمال ومشاريع برمجية مستقلة.',
+      created_at: '2026-11-06T20:06:10.631367+00:00',
+      rating: 5,
+      reviews_count: 0,
+      is_verified: true,
     },
     {
-      id: 'client-tijara',
-      name: 'منصة تجارة بلس للخدمات اللوجستية',
-      company: 'شركة مسار التجارة الرقمية المحدودة',
-      country: 'السعودية',
-      city: 'جدة',
-      verified: true,
-      paymentVerified: true,
-      industry: 'تطبيقات الجوال والتجارة السريعة (Q-Commerce)',
-      category: 'ecommerce',
-      bio: 'تطبيق تجارة إلكترونية يخدم آلاف المستخدمين يومياً، نبحث عن مطوري React Native وFlutter وأنظمة خوادم عالية التحمل لمعالجة طلبات التوصيل الفوري.',
-      rating: 4.9,
-      reviewsCount: 19,
-      hireRate: 95,
-      joinedDate: 'عضو منذ 2024',
+      id: '4cf9bc7f-b9ca-4e8c-9208-768952b0b6c7',
+      full_name: 'ابراهيم الصغير',
+      company_name: 'مؤسسة تجارية',
+      country: 'مصر',
+      avatar_url: 'https://lh3.googleusercontent.com/a/ACg8ocITnf385GMBndZNqcwhsjwinmnltygM8dShx1ayfyGl6Lql3g=s96-c',
+      role: 'client',
+      bio: 'صاحب أعمال ومشاريع تجارية واستثمارية.',
+      created_at: '2026-11-08T04:40:11.490399+00:00',
+      rating: 5,
+      reviews_count: 0,
+      is_verified: true,
     },
     {
-      id: 'client-futurecare',
-      name: 'المختبر الرقمي للرعاية الصحية والطب الاتصالي',
-      company: 'فيوتشر كير تكنولوجيز (FutureCare Kuwait)',
-      country: 'الكويت',
-      city: 'مدينة الكويت',
-      verified: true,
-      paymentVerified: true,
-      industry: 'أنظمة الرعاية الصحية (HealthTech)',
-      category: 'mobile',
-      bio: 'تطوير منصات الملفات الطبية الإلكترونية وتطبيقات حجز المواعيد والاستشارات عن بعد، مع تركيز شديد على خصوصية البيانات ومعايير HIPAA.',
-      rating: 4.7,
-      reviewsCount: 8,
-      hireRate: 90,
-      joinedDate: 'عضو منذ 2024',
-    },
-    {
-      id: 'client-cybershield',
-      name: 'شركة الحماية السيبرانية وحوكمة الأنظمة',
-      company: 'سايبر شيلد لحلول أمن المعلومات',
-      country: 'السعودية',
-      city: 'الخبر',
-      verified: true,
-      paymentVerified: true,
-      industry: 'أمن معلومات واختبار اختراق وتكامل APIs',
-      category: 'security',
-      bio: 'مؤسسة استشارية أمنية توظف مهندسي برمجيات لبناء بوابات حوكمة (RBAC) ومراجعة الثغرات البرمجية في المشاريع الكبرى والتطبيقات البنكية.',
-      rating: 5.0,
-      reviewsCount: 14,
-      hireRate: 100,
-      joinedDate: 'عضو منذ 2023',
+      id: '26ba9f9f-ae21-4863-9c29-74a88364820f',
+      full_name: 'Amr Tarek',
+      company_name: 'Full Stack Solutions',
+      country: 'مصر',
+      avatar_url: 'https://lh3.googleusercontent.com/a/ACg8ocLt_kD_j2A1VSbOpizMrx4grlCJaRaAGniMixUMMG8Gdlax_g=s96-c',
+      role: 'client',
+      bio: 'إدارة مشاريع وحلول تقنية وتطوير ويب.',
+      created_at: '2026-11-08T22:12:25.263735+00:00',
+      rating: 5,
+      reviews_count: 0,
+      is_verified: true,
     },
   ];
 
-  // Dynamic aggregation of clients from store projects & seed
+  // Dynamic aggregation of real clients from Supabase & actual projects only (No mock data)
   const allClients: ClientCardData[] = useMemo(() => {
     const clientsMap: Record<string, ClientCardData> = {};
+    const effectiveClients = realClients.length > 0 ? realClients : INITIAL_REAL_CLIENTS;
 
-    SEED_CLIENTS.forEach((sc) => {
-      clientsMap[sc.name] = {
-        ...sc,
+    effectiveClients.forEach((rc) => {
+      const clientName = rc.full_name || 'عميل معتمد';
+      clientsMap[clientName] = {
+        id: rc.id,
+        name: clientName,
+        company: rc.company_name || 'مؤسسة مستقلة',
+        country: rc.country || 'مصر',
+        city: rc.country === 'السعودية' ? 'الرياض' : (rc.country === 'الإمارات' ? 'دبي' : 'القاهرة'),
+        avatar: rc.avatar_url || '',
+        verified: rc.is_verified ?? true,
+        paymentVerified: true,
+        industry: rc.specialty || 'حلول برمجية وتطوير أعمال',
+        category: (rc.category as any) || 'saas',
+        bio: rc.bio || 'صاحب أعمال ومشاريع معتمد في منصة فوتيك للحلول التقنية والبرمجية.',
         projects: [],
         totalBudget: 0,
         openProjectsCount: 0,
+        rating: Number(rc.rating) || 5.0,
+        reviewsCount: rc.reviews_count || 0,
+        hireRate: 100,
+        joinedDate: rc.created_at ? `عضو منذ ${new Date(rc.created_at).getFullYear()}` : 'عضو مسجل',
       };
     });
 
-    const allProjects: Project[] = (store.projects && store.projects.length > 0)
-      ? store.projects
-      : [
-          {
-            id: 'p-ecommerce-cloud',
-            title: 'منصة التجارة والخدمات السحابية الموزعة (E-Commerce Cloud)',
-            description: 'تطوير منصة متكاملة لمعالجة المدفوعات والطلبات السحابية مع تكامل بوابات الدفع الرقمية ونظام إشعارات فوري ومستودع كود محمي.',
-            stack: ['React', 'Node.js', 'PostgreSQL', 'Docker', 'Redis'],
-            difficulty: 'متقدم',
-            budget: 8500,
-            deadline: '2025-04-15',
-            milestones: ['معمارية النظام وقواعد البيانات', 'تطوير الواجهات والخدمات', 'الفحص والاعتماد FQS وتسليم Git'],
-            owner: 'مؤسسة الأفق الذكي لتقنية المعلومات',
-            status: 'متاح',
-            requiredFqs: 88,
-            proposalsCount: 2,
-            category: 'أنظمة سحابية وتجارة إلكترونية',
-          },
-          {
-            id: 'p-inventory-multi',
-            title: 'نظام إدارة المخزون متعدد الفروع (Multi-Branch Inventory)',
-            description: 'نظام ERP مصغر لإدارة سلاسل الإمداد ومراقبة المخزون اللحظي مع لوحة تحكم تحليلية وتقارير مالية دقيقة.',
-            stack: ['Next.js', 'TypeScript', 'PostgreSQL', 'TailwindCSS'],
-            difficulty: 'متوسط',
-            budget: 6000,
-            deadline: '2025-03-30',
-            milestones: ['هيكلة البيانات والمخازن', 'التقارير الحية والربط', 'التدقيق النهائي'],
-            owner: 'شركة الدلتا للأنظمة والتحول الرقمي',
-            status: 'متاح',
-            requiredFqs: 85,
-            proposalsCount: 1,
-            category: 'إدارة مخازن وERP',
-          },
-          {
-            id: 'p-ai-fraud',
-            title: 'محرك كشف الاحتيال وتصنيف العمليات بالذكاء الاصطناعي',
-            description: 'بناء نموذج Machine Learning عبر Python/FastAPI لتحليل العمليات المالية في الوقت الحقيقي وكشف الأنشطة المشبوهة بدقة 99%.',
-            stack: ['Python', 'FastAPI', 'PyTorch', 'Docker', 'Redis'],
-            difficulty: 'متقدم',
-            budget: 14000,
-            deadline: '2025-05-01',
-            milestones: ['تجهيز البيانات وتدريب النموذج', 'ربط الـ API والـ Webhooks', 'فحص الأمان والاعتماد'],
-            owner: 'مجموعة النماء الرقمية للاستثمار والتقنية',
-            status: 'متاح',
-            requiredFqs: 90,
-            proposalsCount: 3,
-            category: 'ذكاء اصطناعي وأتمتة',
-          },
-          {
-            id: 'p-delivery-app',
-            title: 'تطبيق التوصيل اللحظي وإدارة أسطول المناديب',
-            description: 'تطبيق هجين يعمل على iOS و Android عبر Flutter مع خريطة حية وتوجيه ذكي للسائقين وتتبع بالـ GPS.',
-            stack: ['Flutter', 'Node.js', 'WebSockets', 'MongoDB', 'Google Maps'],
-            difficulty: 'متوسط',
-            budget: 9500,
-            deadline: '2025-04-20',
-            milestones: ['واجهات التطبيق والخرائط', 'الخادم ونظام التنبيهات', 'التشغيل التجريبي'],
-            owner: 'منصة تجارة بلس للخدمات اللوجستية',
-            status: 'متاح',
-            requiredFqs: 86,
-            proposalsCount: 2,
-            category: 'تطبيقات الجوال',
-          },
-          {
-            id: 'p-telehealth-portal',
-            title: 'بوابة الاستشارات الطبية وحجز المواعيد السحابية',
-            description: 'منصة ويب متجاوبة للاستشارات الطبية مع دردشة فيديو مدمجة (WebRTC) وسجلات مرضى مشفرة طبقاً لـ HIPAA.',
-            stack: ['React', 'WebRTC', 'NestJS', 'PostgreSQL', 'TailwindCSS'],
-            difficulty: 'متقدم',
-            budget: 11000,
-            deadline: '2025-05-15',
-            milestones: ['غرفة الفيديو المشفرة', 'نظام المواعيد والوصفات', 'التدقيق الأمني'],
-            owner: 'المختبر الرقمي للرعاية الصحية والطب الاتصالي',
-            status: 'متاح',
-            requiredFqs: 88,
-            proposalsCount: 1,
-            category: 'أنظمة طبية وHealthTech',
-          },
-          {
-            id: 'p-security-audit',
-            title: 'تدقيق أمني شامل وتطوير نظام الصلاحيات المتقدم (RBAC)',
-            description: 'مراجعة أمنية متكاملة لـ 15 واجهة برمجية وتطبيق معايير OWASP مع اختبار اختراق وشهادة فحص معتمدة.',
-            stack: ['Go', 'Docker', 'OAuth2', 'JWT', 'PostgreSQL'],
-            difficulty: 'متقدم',
-            budget: 12500,
-            deadline: '2025-04-10',
-            milestones: ['تحليل الثغرات البرمجية', 'تنفيذ بوابات RBAC', 'تقرير الاعتماد النهائي'],
-            owner: 'شركة الحماية السيبرانية وحوكمة الأنظمة',
-            status: 'متاح',
-            requiredFqs: 92,
-            proposalsCount: 2,
-            category: 'أمن معلومات وتكامل APIs',
-          },
-        ];
+    // Aggregate actual projects published in the system (No mock projects fallback)
+    const actualProjects: Project[] = store.projects || [];
 
-    allProjects.forEach((p) => {
+    actualProjects.forEach((p) => {
       const ownerKey = Object.keys(clientsMap).find(
         (k) => k.toLowerCase() === p.owner.toLowerCase() || p.owner.includes(k) || k.includes(p.owner)
       );
 
       if (ownerKey && clientsMap[ownerKey]) {
         clientsMap[ownerKey].projects.push(p);
-      } else {
+      } else if (p.owner) {
         const newId = 'client-' + Math.random().toString(36).substring(2, 8);
         clientsMap[p.owner] = {
           id: newId,
           name: p.owner,
           company: p.owner,
-          country: (p as any).country || 'السعودية',
-          city: (p as any).city || 'الرياض',
+          country: (p as any).country || 'مصر',
+          city: (p as any).city || 'القاهرة',
           verified: true,
           paymentVerified: true,
           industry: p.category || 'تطوير برمجيات وحلول رقمية',
           category: 'saas',
-          bio: `صاحب مشاريع معتمد ينشر مشاريع برمجية في منصة فوتيك، يبحث عن مبرمجين معتمدين لإنجاز مشاريعه بجودة FQS.`,
+          bio: 'صاحب مشاريع معتمد ينشر مشاريع برمجية في منصة فوتيك بجودة FQS.',
           projects: [p],
           totalBudget: 0,
           openProjectsCount: 0,
           rating: 5.0,
-          reviewsCount: 3,
-          hireRate: 95,
+          reviewsCount: 1,
+          hireRate: 100,
           joinedDate: 'عضو نشط',
         };
       }
@@ -462,7 +350,7 @@ export function DeveloperDashboard({ store, update, notify, go }: DeveloperDashb
         openProjectsCount,
       };
     });
-  }, [store.projects]);
+  }, [realClients, store.projects]);
 
   // Clients Directory Search & Filter State
   const [clientSearch, setClientSearch] = useState('');
@@ -1904,6 +1792,152 @@ export function DeveloperDashboard({ store, update, notify, go }: DeveloperDashb
               <Plus size={16} />
               <span>نشر مشروع جديد في المعرض</span>
             </button>
+          </div>
+
+                    {/* 📦 Featured Projects Highlight Matrix (المشاريع الإنتاجية المعتمدة) */}
+          <div className="rounded-3xl border border-teal-500/20 bg-gradient-to-r from-teal-500/5 via-slate-50 to-white dark:from-[#0c1524] dark:via-[#0e1c2f] dark:to-[#0c1524] p-5 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 pb-3 border-b border-teal-500/10">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl">📦</span>
+                <div>
+                  <h3 className="text-sm font-black text-[#152e46] dark:text-white">
+                    أبرز المشاريع الهندسية المنفذة (Featured Projects)
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    ملخص المنصات الإنتاجية المسلّمة للعملاء وحزم التقنيات وحلول المعمارية البرمجية
+                  </p>
+                </div>
+              </div>
+              <span className="self-start sm:self-auto rounded-xl bg-teal-500/15 border border-teal-500/30 px-3 py-1 text-[11px] font-black text-teal-700 dark:text-teal-300">
+                {portfolioCount} مشاريع إنتاجية موثقة
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-right text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-white/10 text-[11px] font-black text-slate-600 dark:text-slate-300">
+                    <th className="pb-3 pr-2 whitespace-nowrap">المشروع والجهة (Project)</th>
+                    <th className="pb-3 px-3 whitespace-nowrap">حزمة التقنيات (Stack)</th>
+                    <th className="pb-3 pl-2 min-w-[320px]">أبرز الحلول والخصائص المعمارية (Highlights)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                  <tr className="hover:bg-teal-50/30 dark:hover:bg-white/[0.02] transition">
+                    <td className="py-3 pr-2 font-black text-[#152e46] dark:text-white align-top whitespace-nowrap">
+                      <a href="https://algoste.care/" target="_blank" rel="noreferrer" className="text-teal-600 dark:text-teal-400 hover:underline inline-flex items-center gap-1 font-black">
+                        <span>DentalAI</span>
+                        <ExternalLink size={11} />
+                      </a>
+                      <span className="text-slate-400 font-bold mr-1.5">— Algostep</span>
+                      <div className="text-[10px] text-teal-700 dark:text-teal-300 font-medium mt-0.5">منصة رعاية صحية ذكية</div>
+                    </td>
+                    <td className="py-3 px-3 align-top font-mono text-[10px] text-slate-600 dark:text-slate-300">
+                      Next.js 16, TypeScript, PostgreSQL, Multimodal LLM, RAG, Docker
+                    </td>
+                    <td className="py-3 pl-2 align-top text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+                      منصة إدارة عيادات الأسنان والفرز الطبي الذكي بالذكاء الاصطناعي (AI Triage)؛ جدولة ومزامنة المواعيد لحظياً عبر WhatsApp؛ تأمين Webhooks ضد هجمات إعادة الإرسال بتشفير HMAC-SHA256 مع تنظيم استهلاك الطلبات بخوارزمية Token-Bucket Rate Limiting.
+                    </td>
+                  </tr>
+
+                  <tr className="hover:bg-teal-50/30 dark:hover:bg-white/[0.02] transition">
+                    <td className="py-3 pr-2 font-black text-[#152e46] dark:text-white align-top whitespace-nowrap">
+                      <a href="https://ecsdesign.ca/" target="_blank" rel="noreferrer" className="text-teal-600 dark:text-teal-400 hover:underline inline-flex items-center gap-1 font-black">
+                        <span>ECS Customizer</span>
+                        <ExternalLink size={11} />
+                      </a>
+                      <span className="text-slate-400 font-bold mr-1.5">— Client</span>
+                      <div className="text-[10px] text-amber-700 dark:text-amber-300 font-medium mt-0.5">تخصيص ملابس 3D</div>
+                    </td>
+                    <td className="py-3 px-3 align-top font-mono text-[10px] text-slate-600 dark:text-slate-300">
+                      React (Vite), Express, Three.js, PostgreSQL, Drizzle
+                    </td>
+                    <td className="py-3 pl-2 align-top text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+                      منصة تجارة إلكترونية تفاعلية لتصميم وتخصيص الملابس الرياضية؛ محرك تسعير متدرج بـ 5 مستويات خصم و3 تقنيات طباعة؛ معاينة ثلاثية الأبعاد فورية بالمتصفح (Three.js) وتصدير ملفات تصنيع وطباعة صناعية عالية الدقة 300-DPI.
+                    </td>
+                  </tr>
+
+                  <tr className="hover:bg-teal-50/30 dark:hover:bg-white/[0.02] transition">
+                    <td className="py-3 pr-2 font-black text-[#152e46] dark:text-white align-top whitespace-nowrap">
+                      <a href="https://egyptexgateway.com/" target="_blank" rel="noreferrer" className="text-teal-600 dark:text-teal-400 hover:underline inline-flex items-center gap-1 font-black">
+                        <span>EgyptTex Gateway</span>
+                        <ExternalLink size={11} />
+                      </a>
+                      <span className="text-slate-400 font-bold mr-1.5">— Nile Tex</span>
+                      <div className="text-[10px] text-cyan-700 dark:text-cyan-300 font-medium mt-0.5">سوق B2B للمنسوجات</div>
+                    </td>
+                    <td className="py-3 px-3 align-top font-mono text-[10px] text-slate-600 dark:text-slate-300">
+                      Next.js 15, React 19, Supabase & Neon, Tailwind
+                    </td>
+                    <td className="py-3 pl-2 align-top text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+                      سوق رقمي B2B لتجارة وتوريد الأقمشة والمنسوجات عبر 8 قطاعات؛ تحكم مشدد بالصلاحيات (RBAC) وأمان مستوى الصفوف (Row-Level Security)؛ تسعير توريدات متدرج بالجنيه المصري (EGP) مع نظام متكامل لطلب وفحص العينات.
+                    </td>
+                  </tr>
+
+                  <tr className="hover:bg-teal-50/30 dark:hover:bg-white/[0.02] transition">
+                    <td className="py-3 pr-2 font-black text-[#152e46] dark:text-white align-top whitespace-nowrap">
+                      <span className="font-black text-slate-900 dark:text-white">Father Yostos Library POS</span>
+                      <span className="text-slate-400 font-bold mr-1.5">— Client</span>
+                      <div className="text-[10px] text-purple-700 dark:text-purple-300 font-medium mt-0.5">كاشير ومخازن ديسكتوب</div>
+                    </td>
+                    <td className="py-3 px-3 align-top font-mono text-[10px] text-slate-600 dark:text-slate-300">
+                      Electron, React, TypeScript, Express, better-sqlite3
+                    </td>
+                    <td className="py-3 pl-2 align-top text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+                      تطبيق ديسكتوب أوفلاين كامل (Offline-First) لنقاط البيع وإدارة مئات الأصناف والمخازن بدون إنترنت؛ تتبع حركة المبيعات بالباركود اللحظي وحسابات الموردين وإصدار الفواتير التلقائية مع قاعدة SQLite سريعة؛ حزمة تثبيت Windows Installer v2.0.
+                    </td>
+                  </tr>
+
+                  <tr className="hover:bg-teal-50/30 dark:hover:bg-white/[0.02] transition">
+                    <td className="py-3 pr-2 font-black text-[#152e46] dark:text-white align-top whitespace-nowrap">
+                      <span className="font-black text-slate-900 dark:text-white">Puno POS</span>
+                      <span className="text-slate-400 font-bold mr-1.5">— Client</span>
+                      <div className="text-[10px] text-emerald-700 dark:text-emerald-300 font-medium mt-0.5">كاشير مطاعم ميداني</div>
+                    </td>
+                    <td className="py-3 px-3 align-top font-mono text-[10px] text-slate-600 dark:text-slate-300">
+                      Electron, React, Vite, Tailwind
+                    </td>
+                    <td className="py-3 pl-2 align-top text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+                      نظام كاشير مطاعم ديسكتوب أوفلاين Portable خفيف؛ اتصال بيني آمن بين العمليات (Secure IPC عبر contextBridge)؛ طباعة فواتير وإيصالات حرارية لحظية غير متزامنة (Non-blocking thermal receipt printing) تمنع أي تجميد للنظام في الذروة.
+                    </td>
+                  </tr>
+
+                  <tr className="hover:bg-teal-50/30 dark:hover:bg-white/[0.02] transition">
+                    <td className="py-3 pr-2 font-black text-[#152e46] dark:text-white align-top whitespace-nowrap">
+                      <a href="https://github.com/minarob23/gamevault" target="_blank" rel="noreferrer" className="text-teal-600 dark:text-teal-400 hover:underline inline-flex items-center gap-1 font-black">
+                        <span>GameVault</span>
+                        <Github size={11} />
+                      </a>
+                      <span className="text-slate-400 font-bold mr-1.5">— Graduation project</span>
+                      <div className="text-[10px] text-indigo-700 dark:text-indigo-300 font-medium mt-0.5">تحليلات وتنبؤ مبيعات بالذكاء الاصطناعي</div>
+                    </td>
+                    <td className="py-3 px-3 align-top font-mono text-[10px] text-slate-600 dark:text-slate-300">
+                      Python, FastAPI, React, XGBoost/LightGBM, PostgreSQL
+                    </td>
+                    <td className="py-3 pl-2 align-top text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+                      تحليلات تجارة إلكترونية متقدمة للتنبؤ بحجم المبيعات باستخدام خوارزميات التعلم الآلي XGBoost و LightGBM؛ مساعد ذكي للرد وتصنيف نوايا المستخدمين عبر تقنيات معالجة اللغات الطبيعية (NLP Intent-Classification)؛ واجهات سريعة بـ FastAPI.
+                    </td>
+                  </tr>
+
+                  <tr className="hover:bg-teal-50/30 dark:hover:bg-white/[0.02] transition">
+                    <td className="py-3 pr-2 font-black text-[#152e46] dark:text-white align-top whitespace-nowrap">
+                      <a href="https://futech-platform.vercel.app" target="_blank" rel="noreferrer" className="text-teal-600 dark:text-teal-400 hover:underline inline-flex items-center gap-1 font-black">
+                        <span>FuTech Platform</span>
+                        <ExternalLink size={11} />
+                      </a>
+                      <span className="text-slate-400 font-bold mr-1.5">— Platform Founder 👑</span>
+                      <div className="text-[10px] text-teal-700 dark:text-teal-300 font-medium mt-0.5">المنصة الهندسية والضمان المشفر</div>
+                    </td>
+                    <td className="py-3 px-3 align-top font-mono text-[10px] text-slate-600 dark:text-slate-300">
+                      React 19, TypeScript, Node.js, PostgreSQL, Supabase, Tailwind CSS
+                    </td>
+                    <td className="py-3 pl-2 align-top text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+                      المنصة الهندسية المتكاملة لحوكمة المشاريع المستقلة وتوثيق كفاءة المهندسين العرب؛ نظام الضمان المالي المشفر وحجز المستحقات بالكامل (Escrow Vault)؛ مؤشر FQS المعتمد وفحوصات أمان OWASP وحوكمة شاملة.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Portfolio Projects Grid */}
