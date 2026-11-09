@@ -1811,151 +1811,158 @@ export function DeveloperDashboard({ store, update, notify, go }: DeveloperDashb
             </button>
           </div>
 
-                    {/* 📦 Featured Projects Highlight Matrix (المشاريع الإنتاجية المعتمدة) */}
-          <div className="rounded-3xl border border-teal-500/20 bg-gradient-to-r from-teal-500/5 via-slate-50 to-white dark:from-[#0c1524] dark:via-[#0e1c2f] dark:to-[#0c1524] p-5 shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 pb-3 border-b border-teal-500/10">
-              <div className="flex items-center gap-2.5">
-                <span className="text-xl">📦</span>
-                <div>
-                  <h3 className="text-sm font-black text-[#152e46] dark:text-white">
-                    أبرز المشاريع الهندسية المنفذة (Featured Projects)
-                  </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    ملخص المنصات الإنتاجية المسلّمة للعملاء وحزم التقنيات وحلول المعمارية البرمجية
-                  </p>
+          {/* 📦 Featured Projects Highlight Matrix (المشاريع الإنتاجية المعتمدة لمالك المنصة فقط) */}
+          {isOwner && (
+            <div className="rounded-3xl border border-teal-500/20 bg-gradient-to-r from-teal-500/5 via-slate-50 to-white dark:from-[#0c1524] dark:via-[#0e1c2f] dark:to-[#0c1524] p-5 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 pb-3 border-b border-teal-500/10">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xl">📦</span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-black text-[#152e46] dark:text-white">
+                        أبرز المشاريع الهندسية المنفذة (Featured Projects)
+                      </h3>
+                      <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-black text-amber-700 dark:text-amber-300">
+                        مشاريع مالك ومؤسس المنصة 👑
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      ملخص المنصات الإنتاجية المسلّمة للعملاء وحزم التقنيات وحلول المعمارية البرمجية
+                    </p>
+                  </div>
                 </div>
+                <span className="self-start sm:self-auto rounded-xl bg-teal-500/15 border border-teal-500/30 px-3 py-1 text-[11px] font-black text-teal-700 dark:text-teal-300">
+                  {ownerDevObj?.portfolio?.length || portfolioCount || 7} مشاريع إنتاجية موثقة
+                </span>
               </div>
-              <span className="self-start sm:self-auto rounded-xl bg-teal-500/15 border border-teal-500/30 px-3 py-1 text-[11px] font-black text-teal-700 dark:text-teal-300">
-                {portfolioCount} مشاريع إنتاجية موثقة
-              </span>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-right text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-white/10 text-[11px] font-black text-slate-600 dark:text-slate-300">
+                      <th className="pb-3 pr-2 whitespace-nowrap">المشروع والجهة (Project)</th>
+                      <th className="pb-3 px-3 whitespace-nowrap">حزمة التقنيات (Stack)</th>
+                      <th className="pb-3 pl-2 min-w-[320px]">أبرز الحلول والخصائص المعمارية (Highlights)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                    <tr className="hover:bg-teal-50/30 dark:hover:bg-white/[0.02] transition">
+                      <td className="py-3 pr-2 font-black text-[#152e46] dark:text-white align-top whitespace-nowrap">
+                        <a href="https://algoste.care/" target="_blank" rel="noreferrer" className="text-teal-600 dark:text-teal-400 hover:underline inline-flex items-center gap-1 font-black">
+                          <span>DentalAI</span>
+                          <ExternalLink size={11} />
+                        </a>
+                        <span className="text-slate-400 font-bold mr-1.5">— Algostep</span>
+                        <div className="text-[10px] text-teal-700 dark:text-teal-300 font-medium mt-0.5">منصة رعاية صحية ذكية</div>
+                      </td>
+                      <td className="py-3 px-3 align-top font-mono text-[10px] text-slate-600 dark:text-slate-300">
+                        Next.js 16, TypeScript, PostgreSQL, Multimodal LLM, RAG, Docker
+                      </td>
+                      <td className="py-3 pl-2 align-top text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+                        منصة إدارة عيادات الأسنان والفرز الطبي الذكي بالذكاء الاصطناعي (AI Triage)؛ جدولة ومزامنة المواعيد لحظياً عبر WhatsApp؛ تأمين Webhooks ضد هجمات إعادة الإرسال بتشفير HMAC-SHA256 مع تنظيم استهلاك الطلبات بخوارزمية Token-Bucket Rate Limiting.
+                      </td>
+                    </tr>
+
+                    <tr className="hover:bg-teal-50/30 dark:hover:bg-white/[0.02] transition">
+                      <td className="py-3 pr-2 font-black text-[#152e46] dark:text-white align-top whitespace-nowrap">
+                        <a href="https://ecsdesign.ca/" target="_blank" rel="noreferrer" className="text-teal-600 dark:text-teal-400 hover:underline inline-flex items-center gap-1 font-black">
+                          <span>ECS Customizer</span>
+                          <ExternalLink size={11} />
+                        </a>
+                        <span className="text-slate-400 font-bold mr-1.5">— Client</span>
+                        <div className="text-[10px] text-amber-700 dark:text-amber-300 font-medium mt-0.5">تخصيص ملابس 3D</div>
+                      </td>
+                      <td className="py-3 px-3 align-top font-mono text-[10px] text-slate-600 dark:text-slate-300">
+                        React (Vite), Express, Three.js, PostgreSQL, Drizzle
+                      </td>
+                      <td className="py-3 pl-2 align-top text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+                        منصة تجارة إلكترونية تفاعلية لتصميم وتخصيص الملابس الرياضية؛ محرك تسعير متدرج بـ 5 مستويات خصم و3 تقنيات طباعة؛ معاينة ثلاثية الأبعاد فورية بالمتصفح (Three.js) وتصدير ملفات تصنيع وطباعة صناعية عالية الدقة 300-DPI.
+                      </td>
+                    </tr>
+
+                    <tr className="hover:bg-teal-50/30 dark:hover:bg-white/[0.02] transition">
+                      <td className="py-3 pr-2 font-black text-[#152e46] dark:text-white align-top whitespace-nowrap">
+                        <a href="https://egyptexgateway.com/" target="_blank" rel="noreferrer" className="text-teal-600 dark:text-teal-400 hover:underline inline-flex items-center gap-1 font-black">
+                          <span>EgyptTex Gateway</span>
+                          <ExternalLink size={11} />
+                        </a>
+                        <span className="text-slate-400 font-bold mr-1.5">— Nile Tex</span>
+                        <div className="text-[10px] text-cyan-700 dark:text-cyan-300 font-medium mt-0.5">سوق B2B للمنسوجات</div>
+                      </td>
+                      <td className="py-3 px-3 align-top font-mono text-[10px] text-slate-600 dark:text-slate-300">
+                        Next.js 15, React 19, Supabase & Neon, Tailwind
+                      </td>
+                      <td className="py-3 pl-2 align-top text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+                        سوق رقمي B2B لتجارة وتوريد الأقمشة والمنسوجات عبر 8 قطاعات؛ تحكم مشدد بالصلاحيات (RBAC) وأمان مستوى الصفوف (Row-Level Security)؛ تسعير توريدات متدرج بالجنيه المصري (EGP) مع نظام متكامل لطلب وفحص العينات.
+                      </td>
+                    </tr>
+
+                    <tr className="hover:bg-teal-50/30 dark:hover:bg-white/[0.02] transition">
+                      <td className="py-3 pr-2 font-black text-[#152e46] dark:text-white align-top whitespace-nowrap">
+                        <span className="font-black text-slate-900 dark:text-white">Father Yostos Library POS</span>
+                        <span className="text-slate-400 font-bold mr-1.5">— Client</span>
+                        <div className="text-[10px] text-purple-700 dark:text-purple-300 font-medium mt-0.5">كاشير ومخازن ديسكتوب</div>
+                      </td>
+                      <td className="py-3 px-3 align-top font-mono text-[10px] text-slate-600 dark:text-slate-300">
+                        Electron, React, TypeScript, Express, better-sqlite3
+                      </td>
+                      <td className="py-3 pl-2 align-top text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+                        تطبيق ديسكتوب أوفلاين كامل (Offline-First) لنقاط البيع وإدارة مئات الأصناف والمخازن بدون إنترنت؛ تتبع حركة المبيعات بالباركود اللحظي وحسابات الموردين وإصدار الفواتير التلقائية مع قاعدة SQLite سريعة؛ حزمة تثبيت Windows Installer v2.0.
+                      </td>
+                    </tr>
+
+                    <tr className="hover:bg-teal-50/30 dark:hover:bg-white/[0.02] transition">
+                      <td className="py-3 pr-2 font-black text-[#152e46] dark:text-white align-top whitespace-nowrap">
+                        <span className="font-black text-slate-900 dark:text-white">Puno POS</span>
+                        <span className="text-slate-400 font-bold mr-1.5">— Client</span>
+                        <div className="text-[10px] text-emerald-700 dark:text-emerald-300 font-medium mt-0.5">كاشير مطاعم ميداني</div>
+                      </td>
+                      <td className="py-3 px-3 align-top font-mono text-[10px] text-slate-600 dark:text-slate-300">
+                        Electron, React, Vite, Tailwind
+                      </td>
+                      <td className="py-3 pl-2 align-top text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+                        نظام كاشير مطاعم ديسكتوب أوفلاين Portable خفيف؛ اتصال بيني آمن بين العمليات (Secure IPC عبر contextBridge)؛ طباعة فواتير وإيصالات حرارية لحظية غير متزامنة (Non-blocking thermal receipt printing) تمنع أي تجميد للنظام في الذروة.
+                      </td>
+                    </tr>
+
+                    <tr className="hover:bg-teal-50/30 dark:hover:bg-white/[0.02] transition">
+                      <td className="py-3 pr-2 font-black text-[#152e46] dark:text-white align-top whitespace-nowrap">
+                        <a href="https://github.com/minarob23/gamevault" target="_blank" rel="noreferrer" className="text-teal-600 dark:text-teal-400 hover:underline inline-flex items-center gap-1 font-black">
+                          <span>GameVault</span>
+                          <Github size={11} />
+                        </a>
+                        <span className="text-slate-400 font-bold mr-1.5">— Graduation project</span>
+                        <div className="text-[10px] text-indigo-700 dark:text-indigo-300 font-medium mt-0.5">تحليلات وتنبؤ مبيعات بالذكاء الاصطناعي</div>
+                      </td>
+                      <td className="py-3 px-3 align-top font-mono text-[10px] text-slate-600 dark:text-slate-300">
+                        Python, FastAPI, React, XGBoost/LightGBM, PostgreSQL
+                      </td>
+                      <td className="py-3 pl-2 align-top text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+                        تحليلات تجارة إلكترونية متقدمة للتنبؤ بحجم المبيعات باستخدام خوارزميات التعلم الآلي XGBoost و LightGBM؛ مساعد ذكي للرد وتصنيف نوايا المستخدمين عبر تقنيات معالجة اللغات الطبيعية (NLP Intent-Classification)؛ واجهات سريعة بـ FastAPI.
+                      </td>
+                    </tr>
+
+                    <tr className="hover:bg-teal-50/30 dark:hover:bg-white/[0.02] transition">
+                      <td className="py-3 pr-2 font-black text-[#152e46] dark:text-white align-top whitespace-nowrap">
+                        <a href="https://futech-platform.vercel.app" target="_blank" rel="noreferrer" className="text-teal-600 dark:text-teal-400 hover:underline inline-flex items-center gap-1 font-black">
+                          <span>FuTech Platform</span>
+                          <ExternalLink size={11} />
+                        </a>
+                        <span className="text-slate-400 font-bold mr-1.5">— Platform Founder 👑</span>
+                        <div className="text-[10px] text-teal-700 dark:text-teal-300 font-medium mt-0.5">المنصة الهندسية والضمان المشفر</div>
+                      </td>
+                      <td className="py-3 px-3 align-top font-mono text-[10px] text-slate-600 dark:text-slate-300">
+                        React 19, TypeScript, Node.js, PostgreSQL, Supabase, Tailwind CSS
+                      </td>
+                      <td className="py-3 pl-2 align-top text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+                        المنصة الهندسية المتكاملة لحوكمة المشاريع المستقلة وتوثيق كفاءة المهندسين العرب؛ نظام الضمان المالي المشفر وحجز المستحقات بالكامل (Escrow Vault)؛ مؤشر FQS المعتمد وفحوصات أمان OWASP وحوكمة شاملة.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-right text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-white/10 text-[11px] font-black text-slate-600 dark:text-slate-300">
-                    <th className="pb-3 pr-2 whitespace-nowrap">المشروع والجهة (Project)</th>
-                    <th className="pb-3 px-3 whitespace-nowrap">حزمة التقنيات (Stack)</th>
-                    <th className="pb-3 pl-2 min-w-[320px]">أبرز الحلول والخصائص المعمارية (Highlights)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                  <tr className="hover:bg-teal-50/30 dark:hover:bg-white/[0.02] transition">
-                    <td className="py-3 pr-2 font-black text-[#152e46] dark:text-white align-top whitespace-nowrap">
-                      <a href="https://algoste.care/" target="_blank" rel="noreferrer" className="text-teal-600 dark:text-teal-400 hover:underline inline-flex items-center gap-1 font-black">
-                        <span>DentalAI</span>
-                        <ExternalLink size={11} />
-                      </a>
-                      <span className="text-slate-400 font-bold mr-1.5">— Algostep</span>
-                      <div className="text-[10px] text-teal-700 dark:text-teal-300 font-medium mt-0.5">منصة رعاية صحية ذكية</div>
-                    </td>
-                    <td className="py-3 px-3 align-top font-mono text-[10px] text-slate-600 dark:text-slate-300">
-                      Next.js 16, TypeScript, PostgreSQL, Multimodal LLM, RAG, Docker
-                    </td>
-                    <td className="py-3 pl-2 align-top text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
-                      منصة إدارة عيادات الأسنان والفرز الطبي الذكي بالذكاء الاصطناعي (AI Triage)؛ جدولة ومزامنة المواعيد لحظياً عبر WhatsApp؛ تأمين Webhooks ضد هجمات إعادة الإرسال بتشفير HMAC-SHA256 مع تنظيم استهلاك الطلبات بخوارزمية Token-Bucket Rate Limiting.
-                    </td>
-                  </tr>
-
-                  <tr className="hover:bg-teal-50/30 dark:hover:bg-white/[0.02] transition">
-                    <td className="py-3 pr-2 font-black text-[#152e46] dark:text-white align-top whitespace-nowrap">
-                      <a href="https://ecsdesign.ca/" target="_blank" rel="noreferrer" className="text-teal-600 dark:text-teal-400 hover:underline inline-flex items-center gap-1 font-black">
-                        <span>ECS Customizer</span>
-                        <ExternalLink size={11} />
-                      </a>
-                      <span className="text-slate-400 font-bold mr-1.5">— Client</span>
-                      <div className="text-[10px] text-amber-700 dark:text-amber-300 font-medium mt-0.5">تخصيص ملابس 3D</div>
-                    </td>
-                    <td className="py-3 px-3 align-top font-mono text-[10px] text-slate-600 dark:text-slate-300">
-                      React (Vite), Express, Three.js, PostgreSQL, Drizzle
-                    </td>
-                    <td className="py-3 pl-2 align-top text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
-                      منصة تجارة إلكترونية تفاعلية لتصميم وتخصيص الملابس الرياضية؛ محرك تسعير متدرج بـ 5 مستويات خصم و3 تقنيات طباعة؛ معاينة ثلاثية الأبعاد فورية بالمتصفح (Three.js) وتصدير ملفات تصنيع وطباعة صناعية عالية الدقة 300-DPI.
-                    </td>
-                  </tr>
-
-                  <tr className="hover:bg-teal-50/30 dark:hover:bg-white/[0.02] transition">
-                    <td className="py-3 pr-2 font-black text-[#152e46] dark:text-white align-top whitespace-nowrap">
-                      <a href="https://egyptexgateway.com/" target="_blank" rel="noreferrer" className="text-teal-600 dark:text-teal-400 hover:underline inline-flex items-center gap-1 font-black">
-                        <span>EgyptTex Gateway</span>
-                        <ExternalLink size={11} />
-                      </a>
-                      <span className="text-slate-400 font-bold mr-1.5">— Nile Tex</span>
-                      <div className="text-[10px] text-cyan-700 dark:text-cyan-300 font-medium mt-0.5">سوق B2B للمنسوجات</div>
-                    </td>
-                    <td className="py-3 px-3 align-top font-mono text-[10px] text-slate-600 dark:text-slate-300">
-                      Next.js 15, React 19, Supabase & Neon, Tailwind
-                    </td>
-                    <td className="py-3 pl-2 align-top text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
-                      سوق رقمي B2B لتجارة وتوريد الأقمشة والمنسوجات عبر 8 قطاعات؛ تحكم مشدد بالصلاحيات (RBAC) وأمان مستوى الصفوف (Row-Level Security)؛ تسعير توريدات متدرج بالجنيه المصري (EGP) مع نظام متكامل لطلب وفحص العينات.
-                    </td>
-                  </tr>
-
-                  <tr className="hover:bg-teal-50/30 dark:hover:bg-white/[0.02] transition">
-                    <td className="py-3 pr-2 font-black text-[#152e46] dark:text-white align-top whitespace-nowrap">
-                      <span className="font-black text-slate-900 dark:text-white">Father Yostos Library POS</span>
-                      <span className="text-slate-400 font-bold mr-1.5">— Client</span>
-                      <div className="text-[10px] text-purple-700 dark:text-purple-300 font-medium mt-0.5">كاشير ومخازن ديسكتوب</div>
-                    </td>
-                    <td className="py-3 px-3 align-top font-mono text-[10px] text-slate-600 dark:text-slate-300">
-                      Electron, React, TypeScript, Express, better-sqlite3
-                    </td>
-                    <td className="py-3 pl-2 align-top text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
-                      تطبيق ديسكتوب أوفلاين كامل (Offline-First) لنقاط البيع وإدارة مئات الأصناف والمخازن بدون إنترنت؛ تتبع حركة المبيعات بالباركود اللحظي وحسابات الموردين وإصدار الفواتير التلقائية مع قاعدة SQLite سريعة؛ حزمة تثبيت Windows Installer v2.0.
-                    </td>
-                  </tr>
-
-                  <tr className="hover:bg-teal-50/30 dark:hover:bg-white/[0.02] transition">
-                    <td className="py-3 pr-2 font-black text-[#152e46] dark:text-white align-top whitespace-nowrap">
-                      <span className="font-black text-slate-900 dark:text-white">Puno POS</span>
-                      <span className="text-slate-400 font-bold mr-1.5">— Client</span>
-                      <div className="text-[10px] text-emerald-700 dark:text-emerald-300 font-medium mt-0.5">كاشير مطاعم ميداني</div>
-                    </td>
-                    <td className="py-3 px-3 align-top font-mono text-[10px] text-slate-600 dark:text-slate-300">
-                      Electron, React, Vite, Tailwind
-                    </td>
-                    <td className="py-3 pl-2 align-top text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
-                      نظام كاشير مطاعم ديسكتوب أوفلاين Portable خفيف؛ اتصال بيني آمن بين العمليات (Secure IPC عبر contextBridge)؛ طباعة فواتير وإيصالات حرارية لحظية غير متزامنة (Non-blocking thermal receipt printing) تمنع أي تجميد للنظام في الذروة.
-                    </td>
-                  </tr>
-
-                  <tr className="hover:bg-teal-50/30 dark:hover:bg-white/[0.02] transition">
-                    <td className="py-3 pr-2 font-black text-[#152e46] dark:text-white align-top whitespace-nowrap">
-                      <a href="https://github.com/minarob23/gamevault" target="_blank" rel="noreferrer" className="text-teal-600 dark:text-teal-400 hover:underline inline-flex items-center gap-1 font-black">
-                        <span>GameVault</span>
-                        <Github size={11} />
-                      </a>
-                      <span className="text-slate-400 font-bold mr-1.5">— Graduation project</span>
-                      <div className="text-[10px] text-indigo-700 dark:text-indigo-300 font-medium mt-0.5">تحليلات وتنبؤ مبيعات بالذكاء الاصطناعي</div>
-                    </td>
-                    <td className="py-3 px-3 align-top font-mono text-[10px] text-slate-600 dark:text-slate-300">
-                      Python, FastAPI, React, XGBoost/LightGBM, PostgreSQL
-                    </td>
-                    <td className="py-3 pl-2 align-top text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
-                      تحليلات تجارة إلكترونية متقدمة للتنبؤ بحجم المبيعات باستخدام خوارزميات التعلم الآلي XGBoost و LightGBM؛ مساعد ذكي للرد وتصنيف نوايا المستخدمين عبر تقنيات معالجة اللغات الطبيعية (NLP Intent-Classification)؛ واجهات سريعة بـ FastAPI.
-                    </td>
-                  </tr>
-
-                  <tr className="hover:bg-teal-50/30 dark:hover:bg-white/[0.02] transition">
-                    <td className="py-3 pr-2 font-black text-[#152e46] dark:text-white align-top whitespace-nowrap">
-                      <a href="https://futech-platform.vercel.app" target="_blank" rel="noreferrer" className="text-teal-600 dark:text-teal-400 hover:underline inline-flex items-center gap-1 font-black">
-                        <span>FuTech Platform</span>
-                        <ExternalLink size={11} />
-                      </a>
-                      <span className="text-slate-400 font-bold mr-1.5">— Platform Founder 👑</span>
-                      <div className="text-[10px] text-teal-700 dark:text-teal-300 font-medium mt-0.5">المنصة الهندسية والضمان المشفر</div>
-                    </td>
-                    <td className="py-3 px-3 align-top font-mono text-[10px] text-slate-600 dark:text-slate-300">
-                      React 19, TypeScript, Node.js, PostgreSQL, Supabase, Tailwind CSS
-                    </td>
-                    <td className="py-3 pl-2 align-top text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
-                      المنصة الهندسية المتكاملة لحوكمة المشاريع المستقلة وتوثيق كفاءة المهندسين العرب؛ نظام الضمان المالي المشفر وحجز المستحقات بالكامل (Escrow Vault)؛ مؤشر FQS المعتمد وفحوصات أمان OWASP وحوكمة شاملة.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+          )}
 
           {/* Portfolio Projects Grid */}
           {portfolioCount === 0 ? (
