@@ -121,6 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           data.role = 'developer';
         }
         try {
+          localStorage.setItem(`futech_auth_profile_${userId}`, JSON.stringify(data));
           localStorage.setItem('futech_auth_profile', JSON.stringify(data));
         } catch {}
         return data as AuthProfile;
@@ -194,6 +195,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .then(() => {}, (err) => console.warn('[AuthContext] upsert fallback:', err));
 
       try {
+        localStorage.setItem(`futech_auth_profile_${userId}`, JSON.stringify(fallbackProfile));
         localStorage.setItem('futech_auth_profile', JSON.stringify(fallbackProfile));
       } catch {}
 
@@ -201,13 +203,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.warn('[AuthContext] fetchProfile warning:', err);
       try {
-        const cached = localStorage.getItem('futech_auth_profile');
+        const cached = localStorage.getItem(`futech_auth_profile_${userId}`) || localStorage.getItem('futech_auth_profile');
         if (cached) {
           const p = JSON.parse(cached);
-          if (p.skills && p.skills.length === 6 && p.skills.includes('OWASP Security')) p.skills = [];
-          if (p.fqs === 100 && (!p.completed_projects || p.completed_projects === 0)) p.fqs = 0;
-          if (p.rating === 5 && (!p.reviews_count || p.reviews_count === 0)) p.rating = 0;
-          return p;
+          // الأمان الصارم: التأكد التام من أن الملف الشخصي المخزن يطابق هوية المستخدم الحالي فقط لمنع تسميم الجلسات
+          if (p && p.id === userId) {
+            if (p.skills && p.skills.length === 6 && p.skills.includes('OWASP Security')) p.skills = [];
+            if (p.fqs === 100 && (!p.completed_projects || p.completed_projects === 0)) p.fqs = 0;
+            if (p.rating === 5 && (!p.reviews_count || p.reviews_count === 0)) p.rating = 0;
+            return p;
+          }
         }
       } catch {}
       return null;
@@ -508,6 +513,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState(s => ({ ...s, loading: true }));
     try {
       localStorage.removeItem('futech_auth_profile');
+      if (state.session?.user?.id) {
+        localStorage.removeItem(`futech_auth_profile_${state.session.user.id}`);
+      }
       await supabase.auth.signOut();
     } catch {}
     setState({ session: null, profile: null, loading: false });
@@ -526,10 +534,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
+      // حظر وتجريد أي حقول حساسة من التعديل بواسطة المستخدم العادي لمنع رفع الصلاحيات (Privilege Escalation)
+      const {
+        role: _ignoreRole,
+        is_verified: _ignoreVerified,
+        fqs: _ignoreFqs,
+        rating: _ignoreRating,
+        completed_projects: _ignoreCompleted,
+        reviews_count: _ignoreReviews,
+        id: _ignoreId,
+        ...safeData
+      } = data as any;
+
       // 1. استخدام upsert لضمان الحفظ في جدول profiles سواء كان الصف موجوداً أم لا
       const updatedPayload = {
         id: userId,
-        ...data,
+        ...safeData,
         updated_at: new Date().toISOString(),
       };
 
@@ -545,25 +565,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (state.session?.user) {
         await supabase.auth.updateUser({
           data: {
-            full_name: data.full_name || state.profile?.full_name,
-            avatar_url: data.avatar_url || state.profile?.avatar_url,
-            specialty: data.specialty || state.profile?.specialty,
-            country: data.country || state.profile?.country,
-            bio: data.bio || state.profile?.bio,
-            hourly_rate: data.hourly_rate || state.profile?.hourly_rate,
-            github_url: data.github_url || state.profile?.github_url,
+            full_name: safeData.full_name || state.profile?.full_name,
+            avatar_url: safeData.avatar_url || state.profile?.avatar_url,
+            specialty: safeData.specialty || state.profile?.specialty,
+            country: safeData.country || state.profile?.country,
+            bio: safeData.bio || state.profile?.bio,
+            hourly_rate: safeData.hourly_rate || state.profile?.hourly_rate,
+            github_url: safeData.github_url || state.profile?.github_url,
           },
         }).catch(() => {});
       }
 
-      const mergedProfile = state.profile ? { ...state.profile, ...data } : (updatedPayload as AuthProfile);
+      const mergedProfile = state.profile ? { ...state.profile, ...safeData } : (updatedPayload as AuthProfile);
 
       // إذا كان المستخدم هو مالك المنصة، نوحد الصورة سحابياً ومحلياً لكافة إيميلاته
-      if (data.avatar_url && (mergedProfile.role === 'owner' || isOwnerIdentity(mergedProfile) || isOwnerEmail(state.session?.user?.email))) {
-        setOwnerSyncedAvatar(data.avatar_url);
+      if (safeData.avatar_url && (mergedProfile.role === 'owner' || isOwnerIdentity(mergedProfile) || isOwnerEmail(state.session?.user?.email))) {
+        setOwnerSyncedAvatar(safeData.avatar_url);
       }
 
       try {
+        localStorage.setItem(`futech_auth_profile_${userId}`, JSON.stringify(mergedProfile));
         localStorage.setItem('futech_auth_profile', JSON.stringify(mergedProfile));
       } catch {}
 

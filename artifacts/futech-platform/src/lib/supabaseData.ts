@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
 import { validateUploadedFile } from './fileSecurity';
-import { buildOwnerDeveloper } from './ownerAuth';
+import { buildOwnerDeveloper, isOwnerEmail } from './ownerAuth';
 import { Developer, Project, UserWallet, WalletTransaction, PortfolioItem, ClientReview, Application } from '../types';
 
 function isValidUuid(id?: string | null): boolean {
@@ -88,8 +88,8 @@ export async function fetchDevelopers(): Promise<Developer[]> {
 
     const mappedDevs: Developer[] = safeProfiles.map((p: any) => {
       const isMina =
-        p.full_name?.includes('مينا') ||
-        p.id === 'e75a3a4f-b00b-458d-98a5-16d53922e54b';
+        p.id === 'e75a3a4f-b00b-458d-98a5-16d53922e54b' ||
+        (p.email && isOwnerEmail(p.email));
 
       const devReviewsCount = p.reviews_count || (reviewsMap[p.id]?.length || 0);
       const devCompletedProjects = p.reviews_count || 0;
@@ -138,9 +138,9 @@ export async function fetchDevelopers(): Promise<Developer[]> {
     // Ensure Platform Founder (Eng. Mina Robir) is the first featured engineer
     const otherDevs = mappedDevs.filter(
       (d) =>
-        !d.name.includes('مينا') &&
         d.id !== 'e75a3a4f-b00b-458d-98a5-16d53922e54b' &&
-        !d.level?.includes('المالك')
+        d.id !== 'usr-owner-mina' &&
+        d.name !== 'المهندس مينا روبير مجدى فوزى'
     );
 
     const ownerDev = buildOwnerDeveloper();

@@ -53,7 +53,7 @@ export function HomePage({ store, go, notify, onOpenAuth, onSwitchUser, update, 
   const availableProjects = store.projects.filter((p) => p.status === 'متاح').slice(0, 3);
   const ownerDev = buildOwnerDeveloper();
   const otherDevs = (store.developers || []).filter(
-    (d) => !d.name?.includes('مينا') && d.id !== 'usr-owner-mina' && d.id !== 'e75a3a4f-b00b-458d-98a5-16d53922e54b'
+    (d) => d.id !== 'usr-owner-mina' && d.id !== 'e75a3a4f-b00b-458d-98a5-16d53922e54b' && d.name !== 'المهندس مينا روبير مجدى فوزى'
   );
   const allDevsWithMinaFirst = [ownerDev, ...otherDevs];
   const topDevelopers = allDevsWithMinaFirst.slice(0, 4);
@@ -374,7 +374,7 @@ export function HomePage({ store, go, notify, onOpenAuth, onSwitchUser, update, 
           {topDevelopers.length > 0 ? (
             <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {topDevelopers.map((dev, idx) => {
-                const isOwner = dev.name.includes('مينا') || dev.level?.includes('المالك') || dev.level?.includes('مؤسس');
+                const isOwner = dev.id === 'usr-owner-mina' || dev.id === 'e75a3a4f-b00b-458d-98a5-16d53922e54b' || dev.level?.includes('مؤسس');
                 return (
                 <motion.div
                   key={dev.id}

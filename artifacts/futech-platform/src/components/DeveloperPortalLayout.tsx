@@ -8,6 +8,7 @@ import {
 import { Store } from '../types';
 import { UserAvatar } from './UserAvatar';
 import { ThemeToggle } from './ThemeToggle';
+import { isOwnerEmail } from '../lib/ownerAuth';
 
 interface DeveloperPortalLayoutProps {
   store: Store;
@@ -25,11 +26,12 @@ export function DeveloperPortalLayout({
   children,
 }: DeveloperPortalLayoutProps) {
   const [devMobileOpen, setDevMobileOpen] = useState(false);
+  const isOwnerUser = Boolean(store.currentUser?.email && isOwnerEmail(store.currentUser.email));
   const activeDevTab = route === '/dashboard' ? (new URLSearchParams(searchStr).get('tab') || 'overview') : null;
 
   const devSuiteItems = [
     { tab: 'overview', href: '/dashboard?tab=overview', label: 'نظرة عامة والتقارير', icon: Activity },
-    { tab: 'clients', href: '/dashboard?tab=clients', label: 'دليل العملاء والشركات', icon: Building2, badge: 'مشاريع حية 🟢' },
+    { tab: 'clients', href: '/dashboard?tab=clients', label: 'دليل العملاء والشركات', icon: Building2, badge: 'مشاريع حية' },
     { tab: 'projects', href: '/dashboard?tab=projects', label: 'المشاريع والمراحل', icon: BriefcaseBusiness },
     { tab: 'deliveries', href: '/dashboard?tab=deliveries', label: 'سجل التسليم وفحص Git', icon: CheckCircle },
     { tab: 'proposals', href: '/dashboard?tab=proposals', label: 'خطط التقديم والعروض', icon: FileCode2, count: store.applications.length },
@@ -55,8 +57,8 @@ export function DeveloperPortalLayout({
     <div className="min-h-screen bg-[#f4f7fa] text-slate-800 dark:bg-[#070c16] dark:text-slate-100" dir="rtl">
       {/* Developer Dedicated Sidebar */}
       <aside
-        className={`fixed inset-y-0 right-0 z-40 flex w-72 flex-col bg-[#14263b] text-slate-100 transition-transform duration-300 md:translate-x-0 ${
-          devMobileOpen ? 'translate-x-0' : 'translate-x-full'
+        className={`fixed inset-y-0 right-0 z-40 flex w-72 max-w-[85vw] flex-col bg-[#14263b] text-slate-100 transition-transform duration-300 md:translate-x-0 ${
+          devMobileOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'
         }`}
       >
         {/* Header */}
@@ -82,7 +84,7 @@ export function DeveloperPortalLayout({
 
         {/* Developer Profile Card in Sidebar */}
         <div className="p-4">
-          <div className="rounded-2xl border border-white/10 bg-[#1d3550] p-3.5">
+          <div className="rounded-2xl border border-white/10 bg-[#1d3550] p-3.5 shadow-sm">
             <div className="flex items-center gap-3">
               <UserAvatar
                 src={store.currentUser?.avatar}
@@ -92,13 +94,17 @@ export function DeveloperPortalLayout({
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1">
-                  <span className="truncate text-xs font-black text-white">{store.currentUser?.name || 'مهندس برمجيات'}</span>
-                  <BadgeCheck size={14} className="text-[#39c4cc]" />
+                  <span className="truncate text-xs font-black text-white" title={store.currentUser?.name || 'مهندس برمجيات'}>
+                    {store.currentUser?.name || 'مهندس برمجيات'}
+                  </span>
+                  <BadgeCheck size={14} className="text-[#39c4cc] shrink-0" />
                 </div>
-                <div className="text-[10px] text-slate-300">{store.currentUser?.title || 'مهندس برمجيات معتمد'}</div>
+                <div className="truncate text-[10px] text-slate-300 mt-0.5" title={store.currentUser?.title || 'مهندس برمجيات معتمد'}>
+                  {store.currentUser?.title || 'مهندس برمجيات معتمد'}
+                </div>
                 <div className="mt-1 flex items-center gap-1.5 text-[10px] font-bold text-[#4cd3d9]">
-                  <ShieldCheck size={12} />
-                  <span>{store.currentUser?.role === 'owner' || store.currentUser?.name?.includes('مينا') ? 'المالك ومطور معتمد 👑' : 'مطور معتمد FQS'}</span>
+                  <ShieldCheck size={12} className="shrink-0" />
+                  <span>{isOwnerUser ? 'المالك ومطور معتمد 👑' : 'مطور معتمد FQS'}</span>
                 </div>
               </div>
             </div>

@@ -166,7 +166,7 @@ function loadInitialStore(): Store {
     const mergedDocs = INITIAL_DOCS;
     const rawDevs = Array.isArray(parsed.developers) ? parsed.developers : [];
     const otherDevs = rawDevs.filter((d: any) => {
-      return !d.name?.includes('مينا') && d.id !== 'e75a3a4f-b00b-458d-98a5-16d53922e54b' && !d.level?.includes('المالك');
+      return d.id !== 'usr-owner-mina' && d.id !== 'e75a3a4f-b00b-458d-98a5-16d53922e54b' && d.name !== 'المهندس مينا روبير مجدى فوزى' && !d.level?.includes('المالك');
     });
     const ownerDev = buildOwnerDeveloper();
     const sanitizedDevs = [ownerDev, ...otherDevs];

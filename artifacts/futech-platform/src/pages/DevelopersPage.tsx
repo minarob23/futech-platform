@@ -107,7 +107,7 @@ export function DevelopersPage({ store, update, notify, go }: DevelopersPageProp
   const filteredDevelopers = useMemo(() => {
     const ownerDev = buildOwnerDeveloper();
     const otherDevs = (store.developers || []).filter(
-      (d) => !d.name?.includes('مينا') && d.id !== 'usr-owner-mina' && d.id !== 'e75a3a4f-b00b-458d-98a5-16d53922e54b'
+      (d) => d.id !== 'usr-owner-mina' && d.id !== 'e75a3a4f-b00b-458d-98a5-16d53922e54b' && d.name !== 'المهندس مينا روبير مجدى فوزى'
     );
     const allDevs = [ownerDev, ...otherDevs];
 
@@ -147,14 +147,14 @@ export function DevelopersPage({ store, update, notify, go }: DevelopersPageProp
         const matchesFqs = dev.fqs >= minFqs;
 
         // Max Rate
-        const aIsOwner = dev.name.includes('مينا') || dev.level?.includes('مؤسس');
+        const aIsOwner = dev.id === 'usr-owner-mina' || dev.id === 'e75a3a4f-b00b-458d-98a5-16d53922e54b' || dev.level?.includes('مؤسس');
         const matchesRate = aIsOwner || dev.hourlyRate <= maxRate;
 
         return matchesSearch && matchesCategory && matchesAvailability && matchesLevel && matchesFqs && matchesRate;
       })
       .sort((a, b) => {
-        const aIsOwner = a.name.includes('مينا') || a.level?.includes('مؤسس');
-        const bIsOwner = b.name.includes('مينا') || b.level?.includes('مؤسس');
+        const aIsOwner = a.id === 'usr-owner-mina' || a.id === 'e75a3a4f-b00b-458d-98a5-16d53922e54b' || a.level?.includes('مؤسس');
+        const bIsOwner = b.id === 'usr-owner-mina' || b.id === 'e75a3a4f-b00b-458d-98a5-16d53922e54b' || b.level?.includes('مؤسس');
         if (aIsOwner) return -1;
         if (bIsOwner) return 1;
         if (sortBy === 'fqs') return b.fqs - a.fqs;
@@ -601,7 +601,7 @@ export function DevelopersPage({ store, update, notify, go }: DevelopersPageProp
                   </div>
                   <span className="text-slate-300">|</span>
                   <div className="text-[11px] font-bold text-[#1f3854]">
-                    {dev.hourlyRate.toLocaleString('ar-EG')} <span className="text-[9px] text-slate-500">{getDeveloperCurrency(dev)}/س</span>{dev.name.includes('مينا') && <span className="mr-1 text-[8px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-1 py-0.2 rounded border border-amber-400/30">(~35$)</span>}
+                    {dev.hourlyRate.toLocaleString('ar-EG')} <span className="text-[9px] text-slate-500">{getDeveloperCurrency(dev)}/س</span>{(dev.id === 'usr-owner-mina' || dev.id === 'e75a3a4f-b00b-458d-98a5-16d53922e54b' || dev.level?.includes('مؤسس')) && <span className="mr-1 text-[8px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-1 py-0.2 rounded border border-amber-400/30">(~35$)</span>}
                   </div>
                 </div>
 
@@ -759,7 +759,7 @@ export function DevelopersPage({ store, update, notify, go }: DevelopersPageProp
                 <div className="flex items-center gap-4 text-xs">
                   <div className="text-right">
                     <div className="font-extrabold text-[#203d62]">
-                      {dev.hourlyRate.toLocaleString('ar-EG')} <span className="text-[10px] text-slate-500">{getDeveloperCurrency(dev)}/س</span>{dev.name.includes('مينا') && <span className="mr-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded-md border border-amber-400/30">(~35$)</span>}
+                      {dev.hourlyRate.toLocaleString('ar-EG')} <span className="text-[10px] text-slate-500">{getDeveloperCurrency(dev)}/س</span>{(dev.id === 'usr-owner-mina' || dev.id === 'e75a3a4f-b00b-458d-98a5-16d53922e54b' || dev.level?.includes('مؤسس')) && <span className="mr-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded-md border border-amber-400/30">(~35$)</span>}
                     </div>
                     <div className="text-[10px] text-slate-400">سعر الساعة</div>
                   </div>

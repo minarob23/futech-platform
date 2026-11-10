@@ -52,8 +52,8 @@ export function StaffIsolatedGateway({
   const [adminLoading, setAdminLoading] = useState(false);
 
   const currentUser = store.currentUser;
-  const isOwnerLoggedIn = currentUser?.role === 'owner' || currentUser?.name?.includes('مينا');
-  const isAdminLoggedIn = currentUser?.role === 'admin' || isOwnerLoggedIn;
+  const isOwnerLoggedIn = Boolean(currentUser?.email && isOwnerEmail(currentUser.email));
+  const isAdminLoggedIn = isOwnerLoggedIn || currentUser?.role === 'admin';
 
   // Handle Owner Login
   const handleOwnerLogin = async (e: React.FormEvent) => {
@@ -243,14 +243,14 @@ export function StaffIsolatedGateway({
           </div>
 
           {/* Logged in state check */}
-          {currentUser && (
+          {currentUser && (isOwnerLoggedIn || isAdminLoggedIn) && (
             <div className="mt-8 rounded-2xl border border-teal-500/30 bg-teal-50/80 p-4 dark:border-teal-500/30 dark:bg-teal-950/40">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
                   <CheckCircle2 size={18} className="text-teal-600 dark:text-teal-400 shrink-0" />
                   <div>
                     <div className="text-xs font-black text-teal-950 dark:text-teal-100">
-                      أنت مسجل الدخول حالياً: <b>{currentUser.name}</b> ({currentUser.role === 'owner' ? '👑 مالك المنصة' : currentUser.role === 'admin' ? '🛡️ مشرف إدارة' : currentUser.role})
+                      أنت مسجل الدخول حالياً: <b>{currentUser.name}</b> ({isOwnerLoggedIn ? '👑 مالك المنصة' : '🛡️ مشرف إدارة'})
                     </div>
                     <div className="text-[11px] text-teal-700 dark:text-teal-300">
                       يمكنك الدخول مباشرة إلى لوحة التحكم أو التبديل بحساب إداري آخر أدناه
@@ -262,9 +262,8 @@ export function StaffIsolatedGateway({
                   <button
                     type="button"
                     onClick={() => {
-                      if (currentUser.role === 'owner') go('/owner-dashboard');
-                      else if (currentUser.role === 'admin') go('/admin');
-                      else go(activePortal === 'owner' ? '/owner-dashboard' : '/admin');
+                      if (isOwnerLoggedIn) go('/owner-dashboard');
+                      else go('/admin');
                     }}
                     className="inline-flex items-center gap-1.5 rounded-xl bg-[#14293f] px-4 py-2 text-xs font-black text-white shadow-md hover:bg-[#1f3f61] transition"
                   >
