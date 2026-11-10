@@ -16,6 +16,9 @@ export const OWNER_EMAILS = [
   'menarobir246rm@gmail.com',
   'minarobir246rm@gmail.com',
   'minarobir@gmail.com',
+  'mina.robir@gmail.com',
+  'mena.robir@gmail.com',
+  'minarob23@gmail.com',
 ] as const;
 
 export const OWNER_FULL_NAME = 'مينا روبير مجدى فوزى';
@@ -37,32 +40,12 @@ const OWNER_AVATAR_STORAGE_KEY = 'futech_owner_synced_avatar';
 export function isOwnerEmail(email?: string | null): boolean {
   if (!email) return false;
   const clean = email.trim().toLowerCase();
-  const normalized = clean.replace(/[\._\-]/g, '');
-  return (
-    clean === 'menarobir246rm@gmail.com' ||
-    clean === 'minarobir246rm@gmail.com' ||
-    clean === 'minarobir@gmail.com' ||
-    clean === 'mina.robir@gmail.com' ||
-    clean === 'mena.robir@gmail.com' ||
-    clean === 'minarob23@gmail.com' ||
-    clean.startsWith('menarobir246rm') ||
-    clean.startsWith('minarobir246rm') ||
-    clean.startsWith('minarobir@') ||
-    clean === 'minarobir' ||
-    clean === 'menarobir' ||
-    clean.includes('menarobir246rm') ||
-    clean.includes('minarobir246rm') ||
-    clean.includes('minarobir') ||
-    clean.includes('menarobir') ||
-    clean.includes('minarob23') ||
-    normalized.includes('menarobir') ||
-    normalized.includes('minarobir') ||
-    normalized.includes('minarob23')
-  );
+  return (OWNER_EMAILS as readonly string[]).includes(clean);
 }
 
 /**
  * فحص ما إذا كان المستخدم أو الملف الشخصي يمثل مالك المنصة
+ * التحقق حصراً عبر البريد الإلكتروني المعتمد أو المعرف الرقمي الصارم
  */
 export function isOwnerIdentity(userOrProfile?: {
   id?: string;
@@ -72,19 +55,8 @@ export function isOwnerIdentity(userOrProfile?: {
   role?: string;
 } | null): boolean {
   if (!userOrProfile) return false;
-  if (userOrProfile.role === 'owner') return true;
-  if (isOwnerEmail(userOrProfile.email)) return true;
+  if (userOrProfile.email && isOwnerEmail(userOrProfile.email)) return true;
   if (userOrProfile.id === OWNER_USER_ID || userOrProfile.id === 'e75a3a4f-b00b-458d-98a5-16d53922e54b') return true;
-
-  const candidateName = (userOrProfile.name || userOrProfile.full_name || '').trim();
-  if (
-    candidateName.includes('مينا روبير') ||
-    (candidateName.includes('مينا') && candidateName.includes('فوزى')) ||
-    (candidateName.includes('مينا') && candidateName.includes('مجدى'))
-  ) {
-    return true;
-  }
-
   return false;
 }
 
@@ -97,18 +69,6 @@ export function getOwnerSyncedAvatar(): string {
   try {
     const saved = localStorage.getItem(OWNER_AVATAR_STORAGE_KEY);
     if (saved && saved.trim() !== '') return saved;
-
-    // استخراج الصورة من سجل الحسابات المعتمدة لأي من إيميلات المالك إن وجدت
-    const regStr = localStorage.getItem('futech_registered_accounts');
-    if (regStr) {
-      const accounts = JSON.parse(regStr);
-      for (const acc of accounts) {
-        if (isOwnerEmail(acc.email) && acc.profile?.avatar_url) {
-          localStorage.setItem(OWNER_AVATAR_STORAGE_KEY, acc.profile.avatar_url);
-          return acc.profile.avatar_url;
-        }
-      }
-    }
   } catch {}
   return OWNER_LOCAL_AVATAR_PATH;
 }
@@ -121,31 +81,6 @@ export function setOwnerSyncedAvatar(avatar?: string | null): void {
   if (!avatar || avatar.trim() === '') return;
   try {
     localStorage.setItem(OWNER_AVATAR_STORAGE_KEY, avatar);
-
-    // مزامنة الصورة في سجل الحسابات المحلية لكافة إيميلات المالك الثلاثة
-    const regStr = localStorage.getItem('futech_registered_accounts');
-    if (regStr) {
-      const accounts = JSON.parse(regStr);
-      let changed = false;
-      const updated = accounts.map((acc: any) => {
-        if (isOwnerEmail(acc.email)) {
-          changed = true;
-          return {
-            ...acc,
-            profile: {
-              ...acc.profile,
-              avatar_url: avatar,
-              full_name: OWNER_FULL_NAME,
-              role: 'owner',
-            },
-          };
-        }
-        return acc;
-      });
-      if (changed) {
-        localStorage.setItem('futech_registered_accounts', JSON.stringify(updated));
-      }
-    }
   } catch {}
 }
 

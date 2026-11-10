@@ -246,6 +246,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState(s => ({ ...s, loading: true }));
     const cleanEmail = sanitizeEmail(email);
 
+    if (!cleanEmail || !password) {
+      setState(s => ({ ...s, loading: false }));
+      return { error: 'يرجى إدخال البريد الإلكتروني وكلمة المرور' };
+    }
+
     // Rate Limiting check at API / Context level
     const rateLimit = getRateLimitStatus(cleanEmail);
     if (rateLimit.isBlocked) {
@@ -255,149 +260,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
     }
 
-    // 0. فحص خاص لمالك المنصة مينا روبير مجدى فوزى بكافة إيميلاته الثلاثة
-    if (isOwnerEmail(cleanEmail)) {
-      const ownerAvatar = getOwnerSyncedAvatar();
-      const ownerProfile: AuthProfile = {
-        id: OWNER_USER_ID,
-        role: 'owner',
-        full_name: OWNER_FULL_NAME,
-        avatar_url: ownerAvatar || null,
-        bio: 'المطور والمالك الأوحد لمنصة فوتيك، مهندس برمجيات وتطوير شامل (Full-Stack Engineer) ومتحكم بصلاحيات الإدارة وحوكمة المنصة.',
-        country: 'مصر',
-        phone: null,
-        github_url: null,
-        skills: [],
-        specialty: 'مهندس برمجيات وتطوير شامل',
-        category: 'fullstack',
-        hourly_rate: 1750,
-        rating: 0,
-        reviews_count: 0,
-        completed_projects: 0,
-        fqs: 0,
-        is_verified: true,
-        is_available: true,
-        company_name: 'المالك والمطور الأوحد لمنصة فوتيك',
-      };
+    // محاولة تسجيل الدخول الرسمية والوحيدة عبر Supabase Auth دون أي تجاوز محلي أو محاكاة
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: cleanEmail,
+      password,
+    });
 
-      // محاولة تسجيل الدخول عبر Supabase Auth أولاً
-      const { data: ownerAuthData, error: ownerAuthErr } = await supabase.auth.signInWithPassword({
-        email: cleanEmail,
-        password,
-      });
-
-      if (!ownerAuthErr && ownerAuthData?.session) {
-        recordSuccessfulAuth(cleanEmail);
-        await handleSession(ownerAuthData.session);
-        return { error: null };
+    if (error || !data?.session) {
+      const failRate = recordFailedAttempt(cleanEmail);
+      setState(s => ({ ...s, loading: false }));
+      if (failRate.isBlocked) {
+        return {
+          error: '⛔ تم حظر تسجيل الدخول مؤقتاً لمدة 15 دقيقة لتجاوز 5 محاولات خاطئة متتالية لدواعي الأمان.',
+        };
       }
-
-      // إذا تعذر الربط السحابي، يتم تفعيل جلسة المالك فورياً بنفس الصلاحيات
-      const simulatedSession: any = {
-        access_token: 'sess_owner_mina',
-        user: {
-          id: OWNER_USER_ID,
-          email: cleanEmail,
-          user_metadata: {
-            full_name: OWNER_FULL_NAME,
-            role: 'owner',
-            avatar_url: ownerAvatar || null,
-          },
-        },
-      };
-
-      try {
-        localStorage.setItem('futech_auth_profile', JSON.stringify(ownerProfile));
-      } catch {}
-
-      recordSuccessfulAuth(cleanEmail);
-      setState({
-        session: simulatedSession,
-        profile: ownerProfile,
-        loading: false,
-      });
-      return { error: null };
+      const rawMsg = error ? error.message : 'Invalid login credentials';
+      const baseError = translateAuthError(rawMsg);
+      const warning = failRate.attempts >= 3 ? ` (تحذير: متبقي ${failRate.remainingAttempts} محاولات قبل الحظر)` : '';
+      return { error: `${baseError}${warning}` };
     }
 
-    // 1. محاولة تسجيل الدخول عبر Supabase Auth الرسمية
-    const { data, error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
-    if (!error && data.session) {
-      recordSuccessfulAuth(cleanEmail);
-      await handleSession(data.session);
-      return { error: null };
-    }
-
-    // 2. إذا أعاد Supabase خطأ (مثل عدم تفعيل البريد أو تقييد المعدل أو تأخر الحفظ السحابي)،
-    // نتحقق من سجل الحسابات المسجلة محلياً لضمان عدم حجب المستخدم أبداً
-    try {
-      const regAccountsStr = localStorage.getItem('futech_registered_accounts');
-      if (regAccountsStr) {
-        const accounts = JSON.parse(regAccountsStr);
-        const matched = accounts.find((a: any) =>
-          a.email && a.email.toLowerCase() === cleanEmail.toLowerCase() && a.password === password
-        );
-
-        if (matched) {
-          // محاولة جلب أحدث بيانات من جدول profiles في Supabase إن وجدت
-          let finalProfile: AuthProfile = matched.profile;
-          try {
-            const { data: remoteProfile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', matched.profile.id)
-              .maybeSingle();
-            if (remoteProfile) {
-              finalProfile = remoteProfile as AuthProfile;
-            } else {
-              // ضمان حفظ الملف في Supabase profiles
-              try {
-                await supabase.from('profiles').upsert(finalProfile);
-              } catch {}
-            }
-          } catch {}
-
-          const simulatedSession: any = {
-            access_token: 'sess_' + (finalProfile.id || 'local'),
-            user: {
-              id: finalProfile.id,
-              email: cleanEmail,
-              user_metadata: {
-                full_name: finalProfile.full_name,
-                role: finalProfile.role,
-                specialty: finalProfile.specialty,
-                company_name: finalProfile.company_name,
-                avatar_url: finalProfile.avatar_url,
-              },
-            },
-          };
-
-          try {
-            localStorage.setItem('futech_auth_profile', JSON.stringify(finalProfile));
-          } catch {}
-
-          recordSuccessfulAuth(cleanEmail);
-          setState({
-            session: simulatedSession,
-            profile: finalProfile,
-            loading: false,
-          });
-          return { error: null };
-        }
-      }
-    } catch (e) {
-      console.warn('[AuthContext] Local registry signIn check warning:', e);
-    }
-
-    const failRate = recordFailedAttempt(cleanEmail);
-    setState(s => ({ ...s, loading: false }));
-    if (failRate.isBlocked) {
-      return {
-        error: `⛔ تم حظر تسجيل الدخول مؤقتاً لمدة 15 دقيقة لتجاوز 5 محاولات خاطئة متتالية لدواعي الأمان.`,
-      };
-    }
-    const baseError = translateAuthError(error ? error.message : 'Invalid login credentials');
-    const warning = failRate.attempts >= 3 ? ` (تحذير: متبقي ${failRate.remainingAttempts} محاولات قبل الحظر)` : '';
-    return { error: `${baseError}${warning}` };
+    // نجاح تسجيل الدخول الحقيقي من Supabase Auth
+    recordSuccessfulAuth(cleanEmail);
+    await handleSession(data.session);
+    return { error: null };
   };
 
   // ─── signInWithGoogle ───
@@ -430,92 +316,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // ─── signInWithDemoGoogle (Instant Google Simulation) ───
+  // ─── signInWithDemoGoogle (Strictly Restricted Preview Sandbox) ───
   const signInWithDemoGoogle = async (
-    intendedRole: AppRole = 'developer',
-    userEmail?: string,
-    userName?: string
+    intendedRole: AppRole = 'developer'
   ): Promise<{ error: string | null }> => {
+    // الأمان الصارم: منع أي محاكاة لحساب المالك أو المشرف
+    if (intendedRole === 'owner' || intendedRole === 'admin') {
+      return { error: 'لا يمكن تفعيل صلاحيات الإدارة أو مالك المنصة عبر الجلسات الاستعراضية لدواعي الأمان.' };
+    }
+
     setState(s => ({ ...s, loading: true }));
-    const demoId = typeof crypto !== 'undefined' && crypto.randomUUID
-      ? crypto.randomUUID()
-      : 'c' + Math.random().toString(36).substring(2, 10) + '-0000-4000-8000-' + Date.now().toString(16).padStart(12, '0');
+    const demoId = 'sandbox-guest-' + Math.random().toString(36).substring(2, 9);
+    const assignedRole: AppRole = intendedRole === 'client' ? 'client' : 'developer';
+    const demoEmail = assignedRole === 'developer' ? 'guest-dev@futech.local' : 'guest-client@futech.local';
+    const name = assignedRole === 'developer' ? 'مطور تجريبي (Sandbox)' : 'صاحب أعمال تجريبي (Sandbox)';
 
-    const isOwner = isOwnerEmail(userEmail) || Boolean(userName?.includes('مينا')) || intendedRole === 'owner';
-    const email = isOwner
-      ? (userEmail && isOwnerEmail(userEmail) ? userEmail : OWNER_DEFAULT_EMAIL)
-      : (userEmail || (intendedRole === 'developer' ? 'dev.google@futech.com' : 'client.google@futech.com'));
-    const name = isOwner
-      ? OWNER_FULL_NAME
-      : (userName || (intendedRole === 'developer' ? 'مطور برمجيات معتمد (Google)' : 'رائد أعمال ومشاريع (Google)'));
-    const assignedRole: AppRole = isOwner ? 'owner' : intendedRole;
-    const syncedAvatar = isOwner ? (getOwnerSyncedAvatar() || OWNER_GOOGLE_AVATAR_URL) : null;
-
-    const googleProfile: AuthProfile = {
-      id: isOwner ? OWNER_USER_ID : demoId,
+    const sandboxProfile: AuthProfile = {
+      id: demoId,
       role: assignedRole,
       full_name: name,
-      avatar_url: syncedAvatar,
-      bio: isOwner
-        ? 'المطور والمالك الأوحد لمنصة فوتيك، مهندس برمجيات وتطوير شامل (Full-Stack Engineer) ومتحكم بصلاحيات الإدارة وحوكمة المنصة.'
-        : (intendedRole === 'developer'
-          ? 'مهندس برمجيات وتطوير شامل مسجل عبر حساب Google.'
-          : 'صاحب أعمال ومشاريع رقمية مسجل عبر حساب Google.'),
+      avatar_url: null,
+      bio: 'حساب استعراضي تجريبي في بيئة معزولة.',
       country: 'مصر',
       phone: null,
       github_url: null,
       skills: [],
-      specialty: isOwner ? 'مهندس برمجيات وتطوير شامل' : (intendedRole === 'developer' ? 'مهندس برمجيات وتطوير شامل' : null),
-      category: isOwner ? 'fullstack' : (intendedRole === 'developer' ? 'fullstack' : null),
-      hourly_rate: isOwner ? 1750 : 200,
+      specialty: assignedRole === 'developer' ? 'مهندس برمجيات وتطوير شامل' : null,
+      category: assignedRole === 'developer' ? 'fullstack' : null,
+      hourly_rate: 200,
       rating: 0,
       reviews_count: 0,
       completed_projects: 0,
       fqs: 0,
-      is_verified: true,
+      is_verified: false,
       is_available: true,
-      company_name: isOwner ? 'المالك والمطور الأوحد لمنصة فوتيك' : (intendedRole === 'client' ? 'شركة مسجلة عبر Google' : null),
+      company_name: assignedRole === 'client' ? 'شركة استعراضية تجريبية' : null,
     };
-
-    // حفظ في Supabase profiles
-    try {
-      await supabase.from('profiles').upsert(googleProfile);
-    } catch {}
-
-    // حفظ محفظة
-    try {
-      await supabase.from('wallets').upsert({
-        user_id: demoId,
-        currency: 'EGP',
-        total_balance: 0,
-        available_balance: 0,
-        in_escrow_balance: 0,
-      });
-    } catch {}
-
-    // حفظ محلي في سجل الحسابات
-    try {
-      localStorage.setItem('futech_auth_profile', JSON.stringify(googleProfile));
-      const existing = localStorage.getItem('futech_registered_accounts');
-      const list = existing ? JSON.parse(existing) : [];
-      list.push({ email, password: 'google_session_token', profile: googleProfile });
-      localStorage.setItem('futech_registered_accounts', JSON.stringify(list));
-    } catch {}
 
     setState({
       session: {
-        access_token: 'goog_tk_' + demoId,
+        access_token: 'sandbox_token_' + demoId,
         user: {
           id: demoId,
-          email,
+          email: demoEmail,
           user_metadata: {
             full_name: name,
-            role: intendedRole,
-            avatar_url: googleProfile.avatar_url,
+            role: assignedRole,
+            avatar_url: null,
           },
         },
       } as any,
-      profile: googleProfile,
+      profile: sandboxProfile,
       loading: false,
     });
 
@@ -531,48 +382,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState(s => ({ ...s, loading: true }));
     const cleanEmail = sanitizeEmail(email);
 
-    // توليد UUID v4 قياسي صالح للاستخدام مع جدول profiles دائماً
-    const generatedUuid = typeof crypto !== 'undefined' && crypto.randomUUID
-      ? crypto.randomUUID()
-      : 'c' + Math.random().toString(36).substring(2, 10) + '-0000-4000-8000-' + Date.now().toString(16).padStart(12, '0');
+    if (!cleanEmail || !password) {
+      setState(s => ({ ...s, loading: false }));
+      return { error: 'يرجى إدخال البريد الإلكتروني وكلمة المرور' };
+    }
 
-    // 1. محاولة التسجيل عبر Supabase Auth
+    if (!isValidEmailFormat(cleanEmail)) {
+      setState(s => ({ ...s, loading: false }));
+      return { error: 'صيغة البريد الإلكتروني غير صالحة. يرجى كتابة البريد بالإنجليزية (مثال: name@example.com)' };
+    }
+
+    // حماية أمنية صارمة: منع تصعيد الصلاحيات والتسجيل بحساب المالك أو الإدارة
+    const assignedRole: AppRole =
+      metadata.role === 'developer' || metadata.role === 'client' ? metadata.role : 'developer';
+
+    if (isOwnerEmail(cleanEmail) || metadata.role === 'owner' || metadata.role === 'admin') {
+      setState(s => ({ ...s, loading: false }));
+      return { error: 'لا يمكن إنشاء حساب جديد بهذا البريد أو بهذه الصلاحية عبر التسجيل العام.' };
+    }
+
+    // محاولة التسجيل الرسمية عبر Supabase Auth
     const { data, error } = await supabase.auth.signUp({
       email: cleanEmail,
       password,
-      options: { data: metadata },
+      options: {
+        data: {
+          ...metadata,
+          role: assignedRole,
+        },
+      },
     });
 
-    const isRateLimit =
-      error &&
-      (error.message?.includes('rate') ||
-        error.message?.includes('limit') ||
-        error.message?.includes('over_email_send_rate_limit') ||
-        (error as any).status === 429);
+    if (error) {
+      setState(s => ({ ...s, loading: false }));
+      if (error.message?.includes('already registered')) {
+        return { error: 'هذا البريد مسجل مسبقاً في المنصة، يمكنك الانتقال لتبويب تسجيل الدخول مباشرة.' };
+      }
+      return { error: translateAuthError(error.message) };
+    }
 
-    const isInvalidEmailError =
-      error &&
-      error.message?.toLowerCase().includes('email') &&
-      (error.message?.toLowerCase().includes('invalid') || error.message?.toLowerCase().includes('validate'));
+    const targetUserId = data?.user?.id;
+    if (!targetUserId) {
+      setState(s => ({ ...s, loading: false }));
+      return { error: 'فشل إنشاء الحساب عبر خادم الهوية، يرجى المحاولة مرة أخرى.' };
+    }
 
-    // التحقق من وجود المستخدم في Supabase Auth
-    const targetUserId = data?.user?.id || generatedUuid;
-
-    // بناء كائن الملف الشخصي المتكامل والمتوافق 100% مع schema.sql
+    // بناء كائن الملف الشخصي المتكامل والمتوافق مع schema.sql
     const profilePayload: AuthProfile = {
       id: targetUserId,
-      role: metadata.role,
+      role: assignedRole,
       full_name: metadata.full_name || cleanEmail.split('@')[0],
       avatar_url: null,
-      bio: metadata.role === 'developer'
+      bio: assignedRole === 'developer'
         ? 'مهندس برمجيات وتطوير شامل مسجل في حاضنة فوتيك العربية.'
         : 'صاحب أعمال ومشاريع برمجية مستقلة.',
       country: 'مصر',
       phone: null,
       github_url: null,
       skills: (metadata as any).skills || [],
-      specialty: metadata.specialty || (metadata.role === 'developer' ? 'مهندس برمجيات وتطوير شامل' : null),
-      category: metadata.role === 'developer' ? 'fullstack' : null,
+      specialty: metadata.specialty || (assignedRole === 'developer' ? 'مهندس برمجيات وتطوير شامل' : null),
+      category: assignedRole === 'developer' ? 'fullstack' : null,
       hourly_rate: 200,
       rating: 0,
       reviews_count: 0,
@@ -583,21 +452,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       company_name: metadata.company_name || null,
     };
 
-    // 2. الحفظ الفعلي والمباشر في جدول profiles بـ Supabase
+    // حفظ في جدول profiles بـ Supabase
     try {
-      const { error: upsertErr } = await supabase.from('profiles').upsert(profilePayload);
-      if (upsertErr) {
-        console.warn('[AuthContext] profiles upsert error, attempting insert fallback:', upsertErr);
-        const { error: insertErr } = await supabase.from('profiles').insert(profilePayload);
-        if (insertErr && insertErr.code !== '23505') {
-          console.error('[AuthContext] profiles insert error:', insertErr);
-        }
-      }
+      await supabase.from('profiles').upsert(profilePayload);
     } catch (dbEx) {
       console.warn('[AuthContext] profiles database write exception:', dbEx);
     }
 
-    // 3. إنشاء محفظة أولية للمستخدم في جدول wallets بـ Supabase
+    // إنشاء محفظة أولية في جدول wallets بـ Supabase
     try {
       await supabase.from('wallets').upsert({
         user_id: targetUserId,
@@ -608,36 +470,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
     } catch {}
 
-    // 4. حفظ بيانات الحساب في السجل المحلي للمنصة لضمان إمكانية تسجيل الدخول في أي وقت
-    try {
-      const existingAccountsStr = localStorage.getItem('futech_registered_accounts');
-      const accountsList = existingAccountsStr ? JSON.parse(existingAccountsStr) : [];
-      const updatedList = accountsList.filter((a: any) => a.email?.toLowerCase() !== cleanEmail.toLowerCase());
-      updatedList.push({
-        email: cleanEmail,
-        password: password,
-        profile: profilePayload,
-        created_at: new Date().toISOString(),
-      });
-      localStorage.setItem('futech_registered_accounts', JSON.stringify(updatedList));
-      localStorage.setItem('futech_auth_profile', JSON.stringify(profilePayload));
-    } catch {}
-
-    // إذا كان البريد مسجلاً مسبقاً في Supabase Auth
-    if (error && !isRateLimit && !isInvalidEmailError) {
-      if (error.message?.includes('User already registered') || error.message?.includes('already registered')) {
-        setState(s => ({ ...s, loading: false }));
-        return { error: 'هذا البريد مسجل مسبقاً في المنصة، يمكنك الانتقال لتبويب تسجيل الدخول مباشرة.' };
-      }
-      setState(s => ({ ...s, loading: false }));
-      return { error: translateAuthError(error.message) };
-    }
-
-    // 5. تفعيل الجلسة للمستخدم
+    // تفعيل الجلسة إن تم إرجاعها مباشرة
     if (data?.session) {
       await handleSession(data.session);
     } else {
-      // محاولة تسجيل الدخول المباشر لجلب الجلسة
+      // محاولة تسجيل الدخول لجلب الجلسة
       const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password,
@@ -646,20 +483,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!signInErr && signInData?.session) {
         await handleSession(signInData.session);
       } else {
-        // تفعيل جلسة فورية للمستخدم
-        const simulatedSession: any = {
-          access_token: 'tk_' + targetUserId,
-          user: data?.user || {
-            id: targetUserId,
-            email: cleanEmail,
-            user_metadata: metadata,
-          },
-        };
-        setState({
-          session: simulatedSession,
-          profile: profilePayload,
-          loading: false,
-        });
+        setState(s => ({ ...s, loading: false }));
+        return { error: null };
       }
     }
 
@@ -798,7 +623,7 @@ export function useAuth(): AuthContextValue {
 // ─────────────────────────────────────────
 function translateAuthError(msg: string): string {
   const lower = msg.toLowerCase();
-  if (lower.includes('invalid login credentials')) return 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+  if (lower.includes('invalid login credentials') || lower.includes('invalid_grant')) return 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
   if (lower.includes('email not confirmed'))       return 'تم تسجيل الحساب! يرجى تسجيل الدخول مباشرة';
   if (lower.includes('user already registered'))   return 'هذا البريد الإلكتروني مسجل مسبقاً، يمكنك تسجيل الدخول مباشرة';
   if (lower.includes('password should be'))        return 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';

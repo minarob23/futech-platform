@@ -5,9 +5,11 @@ import {
   CheckCircle2, AlertTriangle, ShieldAlert, KeyRound, Sparkles, Home, LogOut
 } from 'lucide-react';
 import { Store, User } from '../types';
+import { useAuth } from '../lib/AuthContext';
 import {
   OWNER_EMAILS,
   OWNER_FULL_NAME,
+  isOwnerEmail,
   buildOwnerUser,
   getOwnerSyncedAvatar,
 } from '../lib/ownerAuth';
@@ -27,6 +29,7 @@ export function StaffIsolatedGateway({
   go,
   initialPortal = 'owner',
 }: StaffIsolatedGatewayProps) {
+  const auth = useAuth();
   const [activePortal, setActivePortal] = useState<'owner' | 'admin'>(initialPortal);
 
   // Sync if initialPortal changes
@@ -38,13 +41,13 @@ export function StaffIsolatedGateway({
 
   // Owner Form State
   const [ownerEmail, setOwnerEmail] = useState('menarobir246rm@gmail.com');
-  const [ownerPassword, setOwnerPassword] = useState('futech_mina_2026');
+  const [ownerPassword, setOwnerPassword] = useState('');
   const [ownerShowPassword, setOwnerShowPassword] = useState(false);
   const [ownerLoading, setOwnerLoading] = useState(false);
 
   // Admin Form State
   const [adminEmail, setAdminEmail] = useState('admin@futech.com');
-  const [adminPassword, setAdminPassword] = useState('futech_admin_2026');
+  const [adminPassword, setAdminPassword] = useState('');
   const [adminShowPassword, setAdminShowPassword] = useState(false);
   const [adminLoading, setAdminLoading] = useState(false);
 
@@ -53,50 +56,75 @@ export function StaffIsolatedGateway({
   const isAdminLoggedIn = currentUser?.role === 'admin' || isOwnerLoggedIn;
 
   // Handle Owner Login
-  const handleOwnerLogin = (e: React.FormEvent) => {
+  const handleOwnerLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ownerEmail.trim() || !ownerPassword.trim()) {
-      notify('يرجى إدخال بيانات الدخول التنفيذية');
+    const cleanEmail = ownerEmail.trim();
+    const cleanPwd = ownerPassword.trim();
+    if (!cleanEmail || !cleanPwd) {
+      notify('يرجى إدخال البريد الإلكتروني وكلمة المرور التنفيذية كاملة');
+      return;
+    }
+
+    if (!isOwnerEmail(cleanEmail)) {
+      notify('⛔ هذا البريد الإلكتروني غير مسجل ضمن العناوين الرسمية لمالك المنصة');
       return;
     }
 
     setOwnerLoading(true);
-    setTimeout(() => {
-      const ownerUser = buildOwnerUser(ownerEmail.trim());
-      update('currentUser', ownerUser);
-      setOwnerLoading(false);
-      notify('تم التحقق بنجاح! مرحباً بك يا بشمهندس مينا في مجلس الحوكمة العليا 👑');
-      go('/owner-dashboard');
-    }, 450);
+    const { error } = await auth.signIn(cleanEmail, cleanPwd);
+    setOwnerLoading(false);
+
+    if (error) {
+      notify(`❌ ${error}`);
+      return;
+    }
+
+    const ownerUser = buildOwnerUser(cleanEmail, auth.profile?.avatar_url || undefined);
+    update('currentUser', ownerUser);
+    notify('تم التحقق بنجاح! مرحباً بك يا بشمهندس مينا في مجلس الحوكمة العليا 👑');
+    go('/owner-dashboard');
   };
 
   // Handle Admin Login
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!adminEmail.trim() || !adminPassword.trim()) {
-      notify('يرجى إدخال بيانات الدخول الإدارية');
+    const cleanEmail = adminEmail.trim();
+    const cleanPwd = adminPassword.trim();
+    if (!cleanEmail || !cleanPwd) {
+      notify('يرجى إدخال بيانات الدخول الإدارية كاملة (البريد وكلمة المرور)');
       return;
     }
 
     setAdminLoading(true);
-    setTimeout(() => {
-      const adminUser: User = {
-        id: 'usr-admin-ops',
-        name: 'مهندس إدارة المنصة والعمليات',
-        email: adminEmail.trim(),
-        role: 'admin',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80',
-        country: 'جمهورية مصر العربية',
-        title: 'مشرف فني وتدقيق جودة FQS',
-        bio: 'مشرف فني مسؤول عن مراجعة المشاريع، تدقيق الكود، وفحص معيار FQS والنزاعات الهندسية.',
-        createdAt: '2024-03-01',
-      };
+    const { error } = await auth.signIn(cleanEmail, cleanPwd);
+    setAdminLoading(false);
 
-      update('currentUser', adminUser);
-      setAdminLoading(false);
-      notify('تم تسجيل الدخول بنجاح كمسؤول ومشرف عمليات المنصة 🛡️');
-      go('/admin');
-    }, 450);
+    if (error) {
+      notify(`❌ ${error}`);
+      return;
+    }
+
+    if (auth.profile?.role !== 'admin' && !isOwnerEmail(cleanEmail)) {
+      await auth.signOut();
+      notify('⛔ هذا الحساب لا يملك صلاحيات الإدارة ومشرف العمليات');
+      return;
+    }
+
+    const adminUser: User = {
+      id: auth.profile?.id || 'usr-admin-ops',
+      name: auth.profile?.full_name || 'مهندس إدارة المنصة والعمليات',
+      email: cleanEmail,
+      role: 'admin',
+      avatar: auth.profile?.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80',
+      country: auth.profile?.country || 'جمهورية مصر العربية',
+      title: auth.profile?.specialty || 'مشرف فني وتدقيق جودة FQS',
+      bio: auth.profile?.bio || 'مشرف فني مسؤول عن مراجعة المشاريع، تدقيق الكود، وفحص معيار FQS والنزاعات الهندسية.',
+      createdAt: '2024-03-01',
+    };
+
+    update('currentUser', adminUser);
+    notify('تم تسجيل الدخول بنجاح كمسؤول ومشرف عمليات المنصة 🛡️');
+    go('/admin');
   };
 
   return (

@@ -153,15 +153,22 @@ export function AuthModal({
   // Handle Admin Direct Login — Supabase Auth
   const handleAdminLoginSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!adminEmail.trim() || !adminPassword.trim()) {
-      notify('يرجى إدخال البريد الإلكتروني الإداري وكلمة المرور');
+    const cleanEmail = sanitizeEmail(adminEmail.trim());
+    const cleanPwd = adminPassword.trim();
+    if (!cleanEmail || !cleanPwd) {
+      showModalError('يرجى إدخال البريد الإلكتروني الإداري وكلمة المرور');
       return;
     }
     setAuthLoading(true);
-    const { error } = await auth.signIn(adminEmail.trim(), adminPassword.trim());
+    const { error } = await auth.signIn(cleanEmail, cleanPwd);
     setAuthLoading(false);
     if (error) {
-      notify(`❌ ${error}`);
+      showModalError(error);
+      return;
+    }
+    if (auth.profile?.role !== 'admin' && !isOwnerEmail(cleanEmail)) {
+      await auth.signOut();
+      showModalError('⛔ هذا الحساب لا يملك صلاحيات الإدارة ومشرف العمليات.');
       return;
     }
     notify('مرحباً بك! تم تسجيل الدخول إلى لوحة إدارة العمليات.');
@@ -172,13 +179,21 @@ export function AuthModal({
   // Handle Owner Direct Login — Supabase Auth
   const handleOwnerLoginSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const cleanEmail = ownerEmail.trim() || OWNER_DEFAULT_EMAIL;
-    const cleanPwd = ownerPassword.trim() || 'futech_mina_2026';
+    const cleanEmail = sanitizeEmail(ownerEmail.trim() || OWNER_DEFAULT_EMAIL);
+    const cleanPwd = ownerPassword.trim();
+    if (!cleanPwd) {
+      showModalError('يرجى إدخال كلمة المرور الخاصة بحساب المالك التنفيذي');
+      return;
+    }
+    if (!isOwnerEmail(cleanEmail)) {
+      showModalError('هذا البريد غير مسجل ضمن العناوين الرسمية المعتمدة لمالك المنصة');
+      return;
+    }
     setAuthLoading(true);
     const { error } = await auth.signIn(cleanEmail, cleanPwd);
     setAuthLoading(false);
     if (error) {
-      notify(`❌ ${error}`);
+      showModalError(error);
       return;
     }
     const ownerUser = buildOwnerUser(cleanEmail, auth.profile?.avatar_url || undefined);
@@ -249,67 +264,10 @@ export function AuthModal({
 
     const isOwnerTarget = targetRole === 'owner';
     const { error } = await auth.signInWithGoogle(isOwnerTarget ? 'owner' : targetRole);
+    setAuthLoading(false);
 
     if (error) {
-      setAuthLoading(false);
-      const lower = error.toLowerCase();
-      if (
-        lower.includes('provider') ||
-        lower.includes('not enabled') ||
-        lower.includes('unsupported') ||
-        lower.includes('validation_failed') ||
-        lower.includes('invalid_grant')
-      ) {
-        showModalSuccess('جاري تسجيل الدخول السريع وتفعيل الحساب عبر Google...');
-        // Fallback to instant Google Demo Sign In so user experience is smooth and uninterrupted
-        setTimeout(async () => {
-          const candidateEmail = sanitizeEmail(loginEmail);
-          const hasOwnerCandidate = isOwnerEmail(candidateEmail);
-          const demoEmail = hasOwnerCandidate
-            ? candidateEmail
-            : (targetRole === 'developer' ? 'dev.google@futech.com' : 'client.google@futech.com');
-          const demoName = hasOwnerCandidate
-            ? OWNER_FULL_NAME
-            : (targetRole === 'developer' ? 'مطور برمجيات معتمد (Google)' : 'صاحب أعمال ومشاريع (Google)');
-          const demoRole = hasOwnerCandidate ? 'owner' : targetRole;
-
-          const demoRes = await auth.signInWithDemoGoogle(
-            demoRole,
-            demoEmail,
-            demoName
-          );
-          if (!demoRes.error) {
-            showModalSuccess('تم الدخول بنجاح بحساب Google! جاري نقلك...');
-            const p = auth.profile;
-            const activeEmail = auth.session?.user?.email || demoEmail;
-            const isOwner = hasOwnerCandidate || isOwnerEmail(activeEmail) || p?.role === 'owner';
-
-            const u: User = isOwner
-              ? buildOwnerUser(activeEmail, p?.avatar_url || undefined)
-              : {
-                  id: p?.id || 'goog_' + Date.now().toString(36),
-                  name: p?.full_name || demoName,
-                  email: activeEmail,
-                  role: targetRole as any,
-                  avatar: '',
-                  title: targetRole === 'developer' ? 'مهندس برمجيات وتطوير شامل' : 'صاحب أعمال ومشاريع',
-                  createdAt: new Date().toISOString().split('T')[0],
-                };
-            onLogin(u);
-            if (isOwner) {
-              notify('مرحباً بك يا بشمهندس مينا! تم الدخول بحساب مالك المنصة عبر Google 👑');
-            }
-            setTimeout(() => {
-              onClose();
-              if (u.role === 'owner') go('/owner-dashboard');
-              else if (targetRole === 'developer') go('/dashboard');
-              else go('/client-dashboard');
-            }, 600);
-          }
-        }, 500);
-      } else {
-        showModalError(error);
-      }
+      showModalError('تعذر تسجيل الدخول عبر Google: ' + error);
     }
   };
 
