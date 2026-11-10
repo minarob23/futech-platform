@@ -26,7 +26,7 @@ export async function fetchDevelopers(): Promise<Developer[]> {
   try {
     const { data: profiles, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, full_name, avatar_url, role, specialty, category, country, hourly_rate, fqs, rating, completed_projects, reviews_count, skills, bio, github_url, is_verified, is_available')
       .in('role', ['developer', 'owner'])
       .order('created_at', { ascending: false });
 

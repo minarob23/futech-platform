@@ -270,7 +270,21 @@ export default function App() {
   const path = location.split('?')[0];
   const [store, setStore] = useState<Store>(loadInitialStore);
   const [toast, setToast] = useState('');
-  const [showDaySplash, setShowDaySplash] = useState(true);
+  const [showDaySplash, setShowDaySplash] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return !sessionStorage.getItem('futech_splash_shown');
+    } catch {
+      return false;
+    }
+  });
+
+  const handleCompleteSplash = () => {
+    setShowDaySplash(false);
+    try {
+      sessionStorage.setItem('futech_splash_shown', 'true');
+    } catch {}
+  };
   const [modal, setModal] = useState<{ type: string; data?: any } | null>(null);
 
   // Supabase Auth
@@ -569,7 +583,7 @@ export default function App() {
             />
           </Suspense>
           {showDaySplash && (
-            <DaySplashLoader onComplete={() => setShowDaySplash(false)} />
+            <DaySplashLoader onComplete={handleCompleteSplash} />
           )}
           {toast && <ToastMessage message={toast} />}
           <Suspense fallback={null}>
@@ -639,7 +653,7 @@ export default function App() {
           </div>
 
           {showDaySplash && (
-            <DaySplashLoader onComplete={() => setShowDaySplash(false)} />
+            <DaySplashLoader onComplete={handleCompleteSplash} />
           )}
           {toast && <ToastMessage message={toast} />}
           <Suspense fallback={null}>
@@ -931,7 +945,7 @@ export default function App() {
       )}
 
       {showDaySplash && (
-        <DaySplashLoader onComplete={() => setShowDaySplash(false)} />
+        <DaySplashLoader onComplete={handleCompleteSplash} />
       )}
     </div>
   );

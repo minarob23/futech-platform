@@ -50,11 +50,11 @@ export function EscrowWalletHub({
     'instapay' | 'wallet_cash' | 'mada' | 'sarie' | 'stcpay' | 'applepay' | 'card' | 'fawry'
   >(currentUser?.country === 'مصر' || wallet.currency === 'EGP' ? 'instapay' : 'mada');
 
-  // Realistic inputs for Arab Payment Gateways
-  const [cardHolder, setCardHolder] = useState(currentUser?.name || 'صاحب الحساب');
-  const [cardNumber, setCardNumber] = useState('5888 4123 9876 2210');
-  const [cardExpiry, setCardExpiry] = useState('08/28');
-  const [cardCvv, setCardCvv] = useState('321');
+  // Realistic inputs for Arab Payment Gateways (Empty by default for security)
+  const [cardHolder, setCardHolder] = useState(currentUser?.name || '');
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCvv, setCardCvv] = useState('');
 
   // InstaPay & Egypt Mobile Wallets
   const [instapayIpa, setInstapayIpa] = useState('');
