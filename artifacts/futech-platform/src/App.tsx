@@ -490,6 +490,8 @@ export default function App() {
     '/suggestions',
     '/cookies',
     '/cookie-policy',
+    '/terms',
+    '/privacy-policy',
   ];
   const isNotFound = !validRoutes.includes(path);
   const route = isNotFound ? '/404' : path;

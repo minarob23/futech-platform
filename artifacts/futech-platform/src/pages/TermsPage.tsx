@@ -59,37 +59,37 @@ export function TermsPage({ go, notify }: TermsPageProps) {
     },
     {
       id: 'escrow',
-      title: '2. ميثاق الضمان المالي المشفر (100% Escrow Protection)',
+      title: '2. ميثاق الضمان المالي وحوكمة المراحل (100% Escrow & Milestones)',
       icon: ShieldCheck,
-      badge: 'ضمان مالي إلزامي',
+      badge: 'حوكمة وتسليم مرحلي',
       content: (
         <div className="space-y-4">
           <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
             <div className="flex items-center gap-2 text-sm font-black text-emerald-400">
               <ShieldCheck size={18} />
-              <span>مبدأ الأمان المزدوج: صفر مخاطرة للطرفين</span>
+              <span>مبدأ الأمان المزدوج: توثيق هندسي وحفظ حقوق الطرفين</span>
             </div>
             <p className="mt-2 text-xs leading-relaxed text-emerald-100/90">
-              لا يبدأ المطور كتابة سطر برمجي واحد إلا بعد إيداع دفعة المرحلة (Milestone) في محفظة الضمان المشفرة للمنصة، ولا تُحوّل الأموال للمطور إلا بعد موافقة العميل وفحص مخرجات الكود.
+              يتم تقسيم المشروع إلى مراحل برمجية واضحة (Milestones). لا يبدأ المطور مرحلة جديدة إلا بعد الاتفاق على متطلباتها وتأكيد تسليم مخرجات المرحلة السابقة ومطابقتها لمعايير الفحص الهندسي.
             </p>
           </div>
           <ul className="space-y-2.5 text-xs text-slate-300">
             <li className="flex items-start gap-2">
               <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-400" />
               <span>
-                <strong>تقسيم الدفعات على مراحل (Milestones):</strong> يُمنع تحويل ميزانية المشروع كاملة دفعة واحدة للمشاريع الكبيرة؛ بل تُقسّم لمراحل محددة التسليمات ومواعيد الإنجاز.
+                <strong>تقسيم الدفعات على مراحل (Milestones):</strong> يُمنع تسليم ميزانية المشروع كاملة دفعة واحدة للمشاريع الكبيرة؛ بل تُقسّم لمراحل محددة التسليمات ومواعيد الإنجاز لحماية الطرفين.
               </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-400" />
               <span>
-                <strong>فترة الفحص والاعتماد (7 أيام):</strong> يحق لصاحب المشروع مهلة 7 أيام تقويمية لمراجعة مخرجات المرحلة والتأكد من خلوها من الأخطاء قبل إطلاق الدفعة.
+                <strong>فترة الفحص والاعتماد (7 أيام):</strong> يحق لصاحب المشروع مهلة 7 أيام تقويمية لمراجعة مخرجات المرحلة والتأكد من خلوها من الأخطاء البرمجية قبل اعتماد التسليم.
               </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-400" />
               <span>
-                <strong>الاعتماد التلقائي:</strong> في حال عدم إبداء العميل لأي ملاحظات أو تقديم طلب تعديل خلال مهلة 7 أيام بعد التسليم الرسمي عبر المنصة، يتم الإفراج عن مستحقات المرحلة للمطور تلقائياً لضمان عدم تجميد حقوقه.
+                <strong>قبولية وسائل الدفع المباشرة:</strong> نظراً لأن بوابات الدفع الإلكتروني قيد البرمجة والربط، فإن سداد كل مرحلة يتم بالتراضي والدفع المباشر بين الطرفين مع توثيق التسليم عبر المنصة.
               </span>
             </li>
           </ul>
@@ -242,17 +242,41 @@ export function TermsPage({ go, notify }: TermsPageProps) {
       ),
     },
     {
-      id: 'off-platform-ban',
-      title: '8. حظر المعاملات خارج المنصة والنزاهة المهنية',
-      icon: AlertTriangle,
+      id: 'direct-payment-policy',
+      title: '8. ميثاق النزاهة وقبولية الدفع المباشر والتعامل الخارجي',
+      icon: CheckCircle2,
+      badge: 'مقبول ومتاح بحرية تامة 🟢',
       content: (
         <div className="space-y-4">
-          <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-xs text-red-200">
-            <h5 className="font-black text-red-400">سياسة صارمة لمنع التهرب والتعامل الخارجي:</h5>
-            <p className="mt-1.5 leading-relaxed">
-              يُحظر منعاً باتاً طلب أو تقديم وسائل دفع خارجية أو التفاوض على إجراء المعاملات بعيداً عن نظام الضمان المالي في فوتيك. يؤدي خرق هذا البند إلى الحظر الدائم للحساب ومصادرة مستحقات المخالف لتعويض الأضرار.
+          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs text-emerald-100">
+            <h5 className="font-black text-emerald-400 flex items-center gap-2 text-sm">
+              <CheckCircle2 size={16} />
+              <span>شفافية كاملة: قبول وحرية الدفع والتحويل المباشر بين المطور والعميل</span>
+            </h5>
+            <p className="mt-2 leading-relaxed">
+              نظراً لأن منصة فوتيك تعمل حالياً بنظام الإطلاق التجريبي الحي (Live Beta) ويجري العمل هندسياً على استكمال برمجة وربط بوابات السداد والتحصيل الإلكتروني الرسمية (مثل InstaPay، Vodafone Cash، Fawry، والبطاقات البنكية)، فإن <strong>التعامل المالي والدفع المباشر أو الخارجي بين صاحب المشروع والمطور مقبول ومسموح به بالكامل وبحرية تامة دون أي قيود أو حظر</strong>.
             </p>
           </div>
+          <ul className="space-y-2.5 text-xs text-slate-300">
+            <li className="flex items-start gap-2">
+              <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-400" />
+              <span>
+                <strong>حرية الاتفاق والتراضي:</strong> يحق للطرفين الاتفاق بالتراضي التام على آلية السداد وجدول الدفعات التي تناسبهما (مثل التحويل البنكي المباشر، المحافظ الإلكترونية، إنستاباي، أو نقداً).
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-400" />
+              <span>
+                <strong>استمرار التوثيق والضمان الهندسي:</strong> تتيح المنصة لكلا الطرفين استخدام غرف المحادثة، تسليم وفحص مستودعات Git، ومطابقة مؤشر FQS، والتحكيم الهندسي الفني لحفظ حقوق العمل بغض النظر عن طريقة السداد المتبعة.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-400" />
+              <span>
+                <strong>مستقبل بوابات الدفع:</strong> بمجرد اكتمال البرمجة الرسمية والربط المصرفي لبوابات الدفع الإلكتروني، سيتاح نظام الحجز الآلي في محفظة الضمان المشفرة (Escrow Vault) كخيار إضافي متاح لمن يرغب بأعلى معايير الأمان المالي.
+              </span>
+            </li>
+          </ul>
         </div>
       ),
     },

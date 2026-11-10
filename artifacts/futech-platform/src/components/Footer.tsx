@@ -347,7 +347,7 @@ export function Footer({ onNotify }: FooterProps) {
                 </li>
                 <li>
                   <Link href="/docs?id=d-7" className="transition hover:text-[#5ce0e8]">
-                    ميثاق النزاهة وحظر الدفع الخارجي
+                    ميثاق النزاهة وقبولية الدفع المباشر
                   </Link>
                 </li>
               </ul>
@@ -505,12 +505,12 @@ export function Footer({ onNotify }: FooterProps) {
                 </div>
 
                 <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4">
-                  <h4 className="flex items-center gap-2 text-sm font-black text-[#5ce0e8]">
+                  <h4 className="flex items-center gap-2 text-sm font-black text-emerald-400">
                     <CheckCircle2 size={16} />
-                    <span>4. حظر التعاملات خارج المنصة والنزاهة المهنية</span>
+                    <span>4. ميثاق النزاهة وقبولية الدفع المباشر والتعامل الخارجي</span>
                   </h4>
                   <p className="mt-2 text-slate-300">
-                    يُحظر تماماً محاولة توجيه الاتفاقات أو إجراء تسويات مالية خارج نطاق المنصة. يهدف هذا الحظر إلى حماية حقوق الطرفين وضمان توثيق المراسلات وحل النزاعات البرمجية بشكل عادل وفق اتفاقيات مستوى الخدمة المعتمدة.
+                    نظراً لأن المنصة في مرحلة الإطلاق التجريبي الحي ويجري العمل على استكمال برمجة بوابات الدفع الإلكتروني (InstaPay, Fawry, Vodafone Cash)، فإن التحويل والدفع المالي المباشر بين المطور والعميل مقبول ومتاح بالكامل وبحرية تامة، مع استمرار توثيق الأكواد ومؤشرات جودة FQS عبر المنصة لحفظ حقوق العمل.
                   </p>
                 </div>
 
