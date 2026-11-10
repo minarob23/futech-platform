@@ -1,3 +1,4 @@
+import { validatePasswordStrength } from './passwordSecurity';
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
@@ -394,6 +395,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!isValidEmailFormat(cleanEmail)) {
       setState(s => ({ ...s, loading: false }));
       return { error: 'صيغة البريد الإلكتروني غير صالحة. يرجى كتابة البريد بالإنجليزية (مثال: name@example.com)' };
+    }
+
+    // فحص سياسة قوة كلمة المرور وفق معايير OWASP
+    const pwdValidation = validatePasswordStrength(password);
+    if (!pwdValidation.isValid) {
+      setState(s => ({ ...s, loading: false }));
+      return { error: pwdValidation.errorMessage || 'كلمة المرور لا تستوفي المعايير الأمنية' };
     }
 
     // حماية أمنية صارمة: منع تصعيد الصلاحيات والتسجيل بحساب المالك أو الإدارة

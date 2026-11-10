@@ -1,3 +1,5 @@
+import { validatePasswordStrength } from '../lib/passwordSecurity';
+import { PasswordStrengthMeter } from './PasswordStrengthMeter';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -285,8 +287,9 @@ export function AuthModal({
       showModalError('صيغة البريد الإلكتروني غير صالحة. يرجى كتابة بريد صالح (مثال: dev@example.com)');
       return;
     }
-    if (devPassword.length < 6) {
-      showModalError('كلمة المرور يجب أن لا تقل عن 6 أحرف أو أرقام');
+    const pwdValidation = validatePasswordStrength(devPassword);
+    if (!pwdValidation.isValid) {
+      showModalError(pwdValidation.errorMessage || 'كلمة المرور لا تستوفي المعايير الأمنية المطلوبة');
       return;
     }
     if (!devGithub.trim()) {
@@ -354,8 +357,9 @@ export function AuthModal({
       showModalError('صيغة البريد الإلكتروني غير صالحة. يرجى كتابة بريد صالح (مثال: client@company.com)');
       return;
     }
-    if (clientPassword.length < 6) {
-      showModalError('كلمة المرور يجب أن لا تقل عن 6 أحرف أو أرقام');
+    const clientPwdValidation = validatePasswordStrength(clientPassword);
+    if (!clientPwdValidation.isValid) {
+      showModalError(clientPwdValidation.errorMessage || 'كلمة المرور لا تستوفي المعايير الأمنية المطلوبة');
       return;
     }
     if (!clientPledge) {
@@ -751,6 +755,7 @@ export function AuthModal({
                           placeholder="••••••••"
                           className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-slate-50/40 px-3.5 text-xs text-slate-900 outline-none transition focus:border-[#2ba6ae] focus:bg-white dark:border-slate-700 dark:bg-slate-900/60 dark:text-white"
                         />
+                        <PasswordStrengthMeter password={devPassword} />
                       </div>
                     </div>
 
@@ -912,6 +917,7 @@ export function AuthModal({
                           placeholder="••••••••"
                           className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-slate-50/40 px-3.5 text-xs text-slate-900 outline-none transition focus:border-[#2ba6ae] focus:bg-white dark:border-slate-700 dark:bg-slate-900/60 dark:text-white"
                         />
+                        <PasswordStrengthMeter password={clientPassword} />
                       </div>
                     </div>
 
