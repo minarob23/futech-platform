@@ -235,24 +235,24 @@ export function UnifiedNavbar({
   const primaryLinks = navLinks.slice(0, 4);
   const secondaryLinks = navLinks.slice(4);
 
-  const isOwnerUser = Boolean(isOwnerIdentity(currentUser) || isOwnerEmail(currentUser?.email));
+  const isOwnerUser = Boolean(currentUser?.email && isOwnerEmail(currentUser.email));
 
   const getDashboardPath = (role?: UserRole, name?: string) => {
-    if (isOwnerUser || role === 'owner') return '/owner-dashboard';
+    if (isOwnerUser) return '/owner-dashboard';
     if (role === 'client') return '/client-dashboard';
     if (role === 'admin') return '/admin';
     return '/dashboard';
   };
 
   const getRoleLabel = (role?: UserRole, name?: string) => {
-    if (isOwnerUser || role === 'owner') return 'مالك المنصة 👑';
+    if (isOwnerUser) return 'مالك المنصة 👑';
     if (role === 'client') return 'صاحب عمل';
     if (role === 'admin') return 'مشرف عام';
     return 'مطور معتمد';
   };
 
   const getRoleBadgeStyle = (role?: UserRole, name?: string) => {
-    if (isOwnerUser || role === 'owner') return 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30';
+    if (isOwnerUser) return 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30';
     if (role === 'client') return 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/20';
     if (role === 'admin') return 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20';
     return 'bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/20';
@@ -712,7 +712,7 @@ export function UnifiedNavbar({
 
                     {/* Go to Dashboard Link */}
                     <div className="mt-2.5 space-y-1.5">
-                      {currentUser.role === 'owner' ? (
+                      {isOwnerUser ? (
                         <>
                           <Link
                             href="/owner-dashboard"
@@ -779,9 +779,9 @@ export function UnifiedNavbar({
                     </div>
 
                     {/* Direct Executive & Admin Portals (Only for Authorized Staff) */}
-                    {(currentUser.role === 'owner' || currentUser.role === 'admin') && (
+                    {(isOwnerUser || currentUser.role === 'admin') && (
                       <div className="mt-3 border-t border-slate-100 pt-2 space-y-1 dark:border-slate-800">
-                        {currentUser.role === 'owner' && (
+                        {isOwnerUser && (
                           <>
                             <Link
                               href="/owner-dashboard"

@@ -56,7 +56,6 @@ export function isOwnerIdentity(userOrProfile?: {
 } | null): boolean {
   if (!userOrProfile) return false;
   if (userOrProfile.email && isOwnerEmail(userOrProfile.email)) return true;
-  if (userOrProfile.id === OWNER_USER_ID || userOrProfile.id === 'e75a3a4f-b00b-458d-98a5-16d53922e54b') return true;
   return false;
 }
 

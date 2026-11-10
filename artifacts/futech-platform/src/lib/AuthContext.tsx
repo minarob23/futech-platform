@@ -95,7 +95,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if (data) {
-        const isOwner = isOwnerIdentity(data) || isOwnerEmail(userMeta?.email) || isOwnerEmail((data as any).email);
+        const activeCandidateEmail = userMeta?.email || (data as any).email;
+        const isOwner = Boolean(activeCandidateEmail && isOwnerEmail(activeCandidateEmail));
         if (isOwner) {
           data.role = 'owner';
           data.full_name = OWNER_FULL_NAME;
@@ -114,6 +115,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setOwnerSyncedAvatar(OWNER_GOOGLE_AVATAR_URL);
             }
           }
+        } else if (data.role === 'owner') {
+          // Security: Demote any non-owner email claiming owner role in DB
+          data.role = 'developer';
         }
         try {
           localStorage.setItem('futech_auth_profile', JSON.stringify(data));
@@ -131,13 +135,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       let intendedRole: AppRole = 'developer';
       if (typeof window !== 'undefined') {
         const storedRole = sessionStorage.getItem('futech_oauth_intended_role') as AppRole;
-        if (storedRole && ['developer', 'client', 'owner'].includes(storedRole)) {
+        if (storedRole && ['developer', 'client'].includes(storedRole)) {
           intendedRole = storedRole;
-          sessionStorage.removeItem('futech_oauth_intended_role');
         }
+        sessionStorage.removeItem('futech_oauth_intended_role');
       }
 
-      const assignedRole: AppRole = isMina ? 'owner' : (meta.role || intendedRole || 'developer');
+      const assignedRole: AppRole = isMina ? 'owner' : (intendedRole === 'client' ? 'client' : 'developer');
       const assignedName = isMina
         ? OWNER_FULL_NAME
         : (meta.full_name || meta.name || (meta.email ? meta.email.split('@')[0] : 'مستخدم مسجل'));

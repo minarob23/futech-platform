@@ -231,7 +231,7 @@ export function AuthModal({
 
     // بعد نجاح تسجيل الدخول، نجهز كائن المستخدم المعتمد
     const profile = auth.profile;
-    const isOwner = isOwnerEmail(cleanEmail) || profile?.role === 'owner';
+    const isOwner = Boolean(cleanEmail && isOwnerEmail(cleanEmail));
     const user: User = isOwner
       ? buildOwnerUser(cleanEmail, profile?.avatar_url || undefined)
       : {

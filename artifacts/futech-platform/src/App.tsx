@@ -173,7 +173,7 @@ function loadInitialStore(): Store {
 
     let sanitizedUser = parsed.currentUser && parsed.currentUser.id ? parsed.currentUser : null;
     if (sanitizedUser) {
-      if (isOwnerIdentity(sanitizedUser) || isOwnerEmail(sanitizedUser.email)) {
+      if (sanitizedUser.email && isOwnerEmail(sanitizedUser.email)) {
         sanitizedUser.name = OWNER_FULL_NAME;
         sanitizedUser.role = 'owner';
         const syncedAvatar = getOwnerSyncedAvatar();
@@ -185,7 +185,12 @@ function loadInitialStore(): Store {
           sanitizedUser.avatar = OWNER_GOOGLE_AVATAR_URL;
           setOwnerSyncedAvatar(OWNER_GOOGLE_AVATAR_URL);
         }
-      } else if (sanitizedUser.avatar) {
+      } else {
+        if (sanitizedUser.role === 'owner') {
+          sanitizedUser.role = 'developer';
+        }
+      }
+      if (sanitizedUser.avatar) {
         if (
           sanitizedUser.avatar.includes('dev-male') ||
           sanitizedUser.avatar.includes('dev-female')
@@ -333,12 +338,11 @@ export default function App() {
     const currentProfile = auth.profile;
     if (currentProfile) {
       setStore((prev) => {
-        const existing = prev.currentUser;
-        const activeEmail = auth.session?.user?.email || (currentProfile as any).email || existing?.email || '';
-        const isMina =
-          isOwnerIdentity(currentProfile) ||
-          isOwnerIdentity(existing) ||
-          isOwnerEmail(activeEmail);
+        const activeEmail = auth.session?.user?.email || (currentProfile as any).email || '';
+        const isMina = Boolean(activeEmail && isOwnerEmail(activeEmail));
+        const resolvedRole: UserRole = isMina
+          ? 'owner'
+          : (currentProfile.role === 'admin' ? 'admin' : (currentProfile.role === 'client' ? 'client' : 'developer'));
 
         // Extract Google avatar from session metadata if present
         const googleAvatar =
@@ -348,7 +352,7 @@ export default function App() {
           (auth.session?.user as any)?.identities?.[0]?.identity_data?.picture ||
           '';
 
-        let resolvedAvatar = googleAvatar || currentProfile.avatar_url || existing?.avatar || '';
+        let resolvedAvatar = googleAvatar || currentProfile.avatar_url || '';
         if (isMina) {
           if (googleAvatar) {
             setOwnerSyncedAvatar(googleAvatar);
@@ -368,21 +372,21 @@ export default function App() {
 
         const liveUser: User = {
           id: isMina ? 'usr-owner-mina' : currentProfile.id,
-          name: isMina ? OWNER_FULL_NAME : (currentProfile.full_name || existing?.name || 'مستخدم مسجل'),
+          name: isMina ? OWNER_FULL_NAME : (currentProfile.full_name || 'مستخدم مسجل'),
           email: activeEmail,
-          role: isMina ? 'owner' : ((currentProfile.role as any) || existing?.role || 'developer'),
+          role: resolvedRole,
           avatar: resolvedAvatar,
-          title: isMina ? 'المالك التنفيذي ومطور المنصة الأوحد' : (currentProfile.specialty || existing?.title || 'مهندس برمجيات وتطوير شامل'),
-          company: isMina ? 'المالك والمطور الأوحد لمنصة فوتيك' : (currentProfile.company_name || existing?.company),
-          country: isMina ? 'جمهورية مصر العربية' : (currentProfile.country || existing?.country || 'مصر'),
-          currency: isMina ? 'ج.م' : (currentProfile.country === 'السعودية' ? 'ر.س' : (existing?.currency || 'ج.م')),
-          currencyCode: isMina ? 'EGP' : (currentProfile.country === 'السعودية' ? 'SAR' : (existing?.currencyCode || 'EGP')),
-          bio: isMina ? 'المطور والمالك الأوحد لمنصة فوتيك، مهندس برمجيات وتطوير شامل (Full-Stack Engineer) ومتحكم بصلاحيات الإدارة وحوكمة المنصة.' : (currentProfile.bio || existing?.bio),
-          githubUrl: currentProfile.github_url || existing?.githubUrl || undefined,
-          hourlyRate: isMina ? 1750 : (currentProfile.hourly_rate || existing?.hourlyRate),
-          skills: currentProfile.skills || existing?.skills || [],
+          title: isMina ? 'المالك التنفيذي ومطور المنصة الأوحد' : (currentProfile.specialty || 'عضو مسجل'),
+          company: isMina ? 'المالك والمطور الأوحد لمنصة فوتيك' : (currentProfile.company_name || ''),
+          country: isMina ? 'جمهورية مصر العربية' : (currentProfile.country || 'مصر'),
+          currency: isMina ? 'ج.م' : (currentProfile.country === 'السعودية' ? 'ر.س' : 'ج.م'),
+          currencyCode: isMina ? 'EGP' : (currentProfile.country === 'السعودية' ? 'SAR' : 'EGP'),
+          bio: isMina ? 'المطور والمالك الأوحد لمنصة فوتيك، مهندس برمجيات وتطوير شامل (Full-Stack Engineer) ومتحكم بصلاحيات الإدارة وحوكمة المنصة.' : (currentProfile.bio || ''),
+          githubUrl: isMina ? 'https://github.com/minarob23' : (currentProfile.github_url || undefined),
+          hourlyRate: isMina ? 1750 : (currentProfile.hourly_rate || 200),
+          skills: currentProfile.skills || [],
           verified: true,
-          createdAt: existing?.createdAt || new Date().toISOString().split('T')[0],
+          createdAt: isMina ? '2024-01-01' : ((currentProfile as any).created_at || new Date().toISOString().split('T')[0]),
         };
 
         return {
@@ -390,7 +394,6 @@ export default function App() {
           currentUser: liveUser,
         };
       });
-
       // Fetch user's real wallet from Supabase
       const isMina =
         isOwnerIdentity(currentProfile) ||
@@ -808,7 +811,7 @@ export default function App() {
               )
             )}
             {route === '/owner-dashboard' && (
-              store.currentUser?.role === 'owner' || store.currentUser?.name?.includes('مينا') ? (
+              Boolean(store.currentUser?.email && isOwnerEmail(store.currentUser.email)) ? (
                 <OwnerDashboard
                   store={store}
                   update={update}
