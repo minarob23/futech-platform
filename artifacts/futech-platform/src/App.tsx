@@ -162,11 +162,8 @@ function loadInitialStore(): Store {
       };
     }
     const parsed = JSON.parse(raw);
-    const savedDocs = Array.isArray(parsed.docs) ? parsed.docs : [];
-    const mergedDocs = INITIAL_DOCS.map((initDoc) => {
-      const match = savedDocs.find((d: any) => d.id === initDoc.id);
-      return match ? { ...initDoc, ...match } : initDoc;
-    });
+    // Documentation and legal policies are authoritative and must always strictly reflect the latest INITIAL_DOCS
+    const mergedDocs = INITIAL_DOCS;
     const rawDevs = Array.isArray(parsed.developers) ? parsed.developers : [];
     const otherDevs = rawDevs.filter((d: any) => {
       return !d.name?.includes('مينا') && d.id !== 'e75a3a4f-b00b-458d-98a5-16d53922e54b' && !d.level?.includes('المالك');
@@ -296,6 +293,14 @@ export default function App() {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [location, searchStr]);
+
+  // 0. Force sync authoritative legal and platform documentation from INITIAL_DOCS to purge any stale cached docs
+  useEffect(() => {
+    setStore((prev) => ({
+      ...prev,
+      docs: INITIAL_DOCS,
+    }));
+  }, []);
 
   // 1. Live Data Sync from Supabase (Real Developers & Projects)
   useEffect(() => {
