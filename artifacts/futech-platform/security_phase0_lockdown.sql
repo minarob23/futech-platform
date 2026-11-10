@@ -1,13 +1,22 @@
 -- ============================================================================
 -- FuTech Platform - Phase 0 Master Security Lockdown (OWASP ASVS Standard)
 -- ============================================================================
--- تاريخ التقرير: Nov 10, 2026 | مراجعة أمنية شاملة لـ schema.sql
--- يقفل هذا السكربت الثغرات الحرجة S1, S2, S3, S4, S5, S6, S9, S11 بشكل جذري
--- ويعتمد على auth.uid() و auth.jwt() الموثقين دون استعلام جداول خاصة
+-- تاريخ التحديث: Nov 10, 2026
+-- يعالج خطأ: Privilege escalation rejected عند التشغيل من لوحة تحكم Supabase SQL Editor
+-- يسمح لـ postgres و service_role بتنفيذ أوامر الصيانة، ويقفل الـ API تماماً ضد أي اختراق
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
--- 1. غلق جدول الملفات الشخصية profiles (S1, S2, S3, S9, S11)
+-- 1. تنظيف أي حسابات وهمية سابقة أولاً قبل تفعيل القيود
+-- ----------------------------------------------------------------------------
+UPDATE public.profiles 
+SET role = 'developer' 
+WHERE role = 'owner' 
+AND id NOT IN ('e75a3a4f-b00b-458d-98a5-16d53922e54b');
+
+
+-- ----------------------------------------------------------------------------
+-- 2. غلق جدول الملفات الشخصية profiles ومنع رفع الصلاحيات (S1, S2, S3, S9, S11)
 -- ----------------------------------------------------------------------------
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
@@ -20,7 +29,7 @@ DROP POLICY IF EXISTS "profiles_select_public" ON public.profiles;
 DROP POLICY IF EXISTS "profiles_insert_own" ON public.profiles;
 DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
 
--- قراءة عامة للبيانات غير الحساسة (دليل المطورين والعملاء)
+-- قراءة عامة للبيانات غير الحساسة
 CREATE POLICY "profiles_select_public" ON public.profiles
     FOR SELECT USING (true);
 
@@ -32,12 +41,18 @@ CREATE POLICY "profiles_insert_own" ON public.profiles
 CREATE POLICY "profiles_update_own" ON public.profiles
     FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
 
--- منع تصعيد الصلاحيات (Trigger صارم لمنع تعديل role أو fqs أو rating)
+-- Trigger حماية مشدد لمنع تغيير الرتبة أو التقييم عبر الـ REST API
 CREATE OR REPLACE FUNCTION public.protect_profile_sensitive_fields()
 RETURNS TRIGGER AS $$
 DECLARE
     v_is_owner BOOLEAN;
 BEGIN
+    -- السماح التام لمدير قاعدة البيانات (Supabase SQL Editor / postgres / service_role)
+    IF current_user IN ('postgres', 'supabase_admin') OR COALESCE(auth.role(), '') = 'service_role' THEN
+        RETURN NEW;
+    END IF;
+
+    -- التحقق من توكن المالك عبر البريد الإلكتروني المشفر
     v_is_owner := COALESCE(auth.jwt() ->> 'email', '') IN (
         'menarobir246rm@gmail.com',
         'minarobir246rm@gmail.com',
@@ -115,7 +130,7 @@ BEGIN
         v_country,
         NEW.raw_user_meta_data->>'specialty',
         NEW.raw_user_meta_data->>'company_name',
-        v_is_owner, -- التوثيق التلقائي للمالك فقط
+        v_is_owner,
         TRUE,
         CASE WHEN v_is_owner THEN 5.0 ELSE 0.0 END,
         CASE WHEN v_is_owner THEN 15 ELSE 0 END,
@@ -127,7 +142,6 @@ BEGIN
         country = EXCLUDED.country,
         avatar_url = COALESCE(EXCLUDED.avatar_url, profiles.avatar_url);
 
-    -- إنشاء المحفظة المالية بصفر رصيد
     INSERT INTO public.wallets (user_id, currency, total_balance, available_balance, in_escrow_balance)
     VALUES (NEW.id, CASE WHEN v_country = 'مصر' THEN 'EGP' ELSE 'SAR' END, 0.00, 0.00, 0.00)
     ON CONFLICT (user_id) DO NOTHING;
@@ -138,16 +152,16 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 
 -- ----------------------------------------------------------------------------
--- 2. غلق جدول المحافظ والمعاملات المالية wallets & transactions (S2)
+-- 3. غلق المحافظ والمعاملات المالية wallets & transactions (S2)
 -- ----------------------------------------------------------------------------
 ALTER TABLE public.wallets ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "own_wallet_read" ON public.wallets;
+DROP POLICY IF EXISTS "wallets_all" ON public.wallets;
 DROP POLICY IF EXISTS "wallets_insert" ON public.wallets;
 DROP POLICY IF EXISTS "wallets_update" ON public.wallets;
-DROP POLICY IF EXISTS "wallets_all" ON public.wallets;
+DROP POLICY IF EXISTS "wallets_select_own" ON public.wallets;
 
--- القراءة حصراً لصاحب المحفظة عبر auth.uid() أو للمالك المعتمد عبر JWT email
 CREATE POLICY "wallets_select_own" ON public.wallets
     FOR SELECT USING (
         auth.uid() = user_id
@@ -158,13 +172,11 @@ CREATE POLICY "wallets_select_own" ON public.wallets
         )
     );
 
--- منع التعديل والإدخال المباشر للمحافظ من قبل العميل عبر REST API
--- التعديل يتم حصراً عبر الدوال المخزنة SECURITY DEFINER
-
 ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "own_transactions_read" ON public.transactions;
 DROP POLICY IF EXISTS "transactions_all" ON public.transactions;
+DROP POLICY IF EXISTS "transactions_select_own" ON public.transactions;
 
 CREATE POLICY "transactions_select_own" ON public.transactions
     FOR SELECT USING (
@@ -178,12 +190,13 @@ CREATE POLICY "transactions_select_own" ON public.transactions
 
 
 -- ----------------------------------------------------------------------------
--- 3. تأمين عقود ودوال الضمان المالي Escrow (S4)
+-- 4. تأمين عقود ودوال الضمان المالي Escrow (S4)
 -- ----------------------------------------------------------------------------
 ALTER TABLE public.escrow_contracts ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "escrow_parties_read" ON public.escrow_contracts;
 DROP POLICY IF EXISTS "escrow_all" ON public.escrow_contracts;
+DROP POLICY IF EXISTS "escrow_select_parties" ON public.escrow_contracts;
 
 CREATE POLICY "escrow_select_parties" ON public.escrow_contracts
     FOR SELECT USING (
@@ -196,7 +209,7 @@ CREATE POLICY "escrow_select_parties" ON public.escrow_contracts
         )
     );
 
--- إعادة كتابة دالة تحرير دفعة الضمان: الاعتماد الصارم على auth.uid() لمنع تحرير المطور للدفعة لنفسه
+-- دالة تحرير دفعة الضمان مؤمنة بـ auth.uid()
 CREATE OR REPLACE FUNCTION public.release_escrow_payment(
     p_escrow_id UUID
 )
@@ -215,15 +228,20 @@ DECLARE
     v_ref_release       TEXT;
     v_ref_earn          TEXT;
 BEGIN
-    IF v_caller_id IS NULL THEN
-        RAISE EXCEPTION 'Authentication required to release escrow.';
-    END IF;
+    -- إذا كان الاستدعاء من المشرف في SQL Editor
+    IF current_user IN ('postgres', 'supabase_admin') THEN
+        v_is_owner := TRUE;
+    ELSE
+        IF v_caller_id IS NULL THEN
+            RAISE EXCEPTION 'Authentication required to release escrow.';
+        END IF;
 
-    v_is_owner := v_caller_email IN (
-        'menarobir246rm@gmail.com', 'minarobir246rm@gmail.com',
-        'minarobir@gmail.com', 'mina.robir@gmail.com',
-        'mena.robir@gmail.com', 'minarob23@gmail.com'
-    );
+        v_is_owner := v_caller_email IN (
+            'menarobir246rm@gmail.com', 'minarobir246rm@gmail.com',
+            'minarobir@gmail.com', 'mina.robir@gmail.com',
+            'mena.robir@gmail.com', 'minarob23@gmail.com'
+        );
+    END IF;
 
     SELECT * INTO v_escrow FROM public.escrow_contracts
     WHERE id = p_escrow_id AND status = 'held'
@@ -233,7 +251,7 @@ BEGIN
         RAISE EXCEPTION 'عقد الضمان غير موجود أو تم تحريره مسبقاً';
     END IF;
 
-    -- التحقق الحاسم من الهوية: فقط صاحب العمل صاحب العقد أو مالك المنصة يمكنه تحرير الدفعة للمطور
+    -- التحقق الحاسم من الهوية: فقط صاحب العمل صاحب العقد أو مالك المنصة
     IF v_escrow.client_id != v_caller_id AND NOT v_is_owner THEN
         RAISE EXCEPTION 'غير مصرح: تحرير الدفعة محصور بالعميل المتعاقد فقط أو مالك المنصة';
     END IF;
@@ -278,16 +296,17 @@ $$;
 
 
 -- ----------------------------------------------------------------------------
--- 4. خصوصية الرسائل والمحادثات والعروض (S5)
+-- 5. خصوصية الرسائل والمحادثات والعروض (S5)
 -- ----------------------------------------------------------------------------
 ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "conversations_read" ON public.conversations;
 DROP POLICY IF EXISTS "conversations_insert" ON public.conversations;
+DROP POLICY IF EXISTS "conversations_select_parties" ON public.conversations;
+DROP POLICY IF EXISTS "conversations_insert_parties" ON public.conversations;
 
 CREATE POLICY "conversations_select_parties" ON public.conversations
     FOR SELECT USING (
-        auth.uid() = client_id 
-        OR auth.uid() = developer_id
+        auth.uid() = client_id OR auth.uid() = developer_id
         OR COALESCE(auth.jwt() ->> 'email', '') IN (
             'menarobir246rm@gmail.com', 'minarobir246rm@gmail.com',
             'minarobir@gmail.com', 'mina.robir@gmail.com',
@@ -296,16 +315,14 @@ CREATE POLICY "conversations_select_parties" ON public.conversations
     );
 
 CREATE POLICY "conversations_insert_parties" ON public.conversations
-    FOR INSERT WITH CHECK (
-        auth.uid() = client_id 
-        OR auth.uid() = developer_id
-    );
+    FOR INSERT WITH CHECK (auth.uid() = client_id OR auth.uid() = developer_id);
 
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "messages_read" ON public.messages;
 DROP POLICY IF EXISTS "messages_insert" ON public.messages;
+DROP POLICY IF EXISTS "messages_select_parties" ON public.messages;
+DROP POLICY IF EXISTS "messages_insert_sender" ON public.messages;
 
--- الرسائل مقروءة فقط لطرفي المحادثة (العميل والمطور) والمالك
 CREATE POLICY "messages_select_parties" ON public.messages
     FOR SELECT USING (
         conversation_id IN (
@@ -319,7 +336,6 @@ CREATE POLICY "messages_select_parties" ON public.messages
         )
     );
 
--- الإرسال محصور بالمرسل الفعلي في المحادثة
 CREATE POLICY "messages_insert_sender" ON public.messages
     FOR INSERT WITH CHECK (
         auth.uid() = sender_id
@@ -329,10 +345,11 @@ CREATE POLICY "messages_insert_sender" ON public.messages
         )
     );
 
--- العروض الفنية (Proposals) محصورة بصاحب المشروع ومقدم العرض
 ALTER TABLE public.proposals ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "proposals_read" ON public.proposals;
 DROP POLICY IF EXISTS "proposals_insert" ON public.proposals;
+DROP POLICY IF EXISTS "proposals_select_parties" ON public.proposals;
+DROP POLICY IF EXISTS "proposals_insert_dev" ON public.proposals;
 
 CREATE POLICY "proposals_select_parties" ON public.proposals
     FOR SELECT USING (
@@ -350,12 +367,13 @@ CREATE POLICY "proposals_insert_dev" ON public.proposals
 
 
 -- ----------------------------------------------------------------------------
--- 5. تشديد أمان حاويات التخزين Storage Buckets (S6)
+-- 6. تشديد أمان حاويات التخزين Storage Buckets (S6)
 -- ----------------------------------------------------------------------------
 DROP POLICY IF EXISTS "Authenticated Storage Insert" ON storage.objects;
 DROP POLICY IF EXISTS "Authenticated Storage Update" ON storage.objects;
+DROP POLICY IF EXISTS "User Storage Insert" ON storage.objects;
+DROP POLICY IF EXISTS "User Storage Update" ON storage.objects;
 
--- المستخدم يمكنه الرفع والتعديل فقط في المسارات المعنونة بمعرفه السحابي
 CREATE POLICY "User Storage Insert" ON storage.objects
     FOR INSERT WITH CHECK (
         bucket_id IN ('avatars', 'portfolio', 'project-attachments')
@@ -370,13 +388,5 @@ CREATE POLICY "User Storage Update" ON storage.objects
         AND (storage.foldername(name))[1] = auth.uid()::text
     );
 
-
--- ----------------------------------------------------------------------------
--- 6. تنظيف الحسابات السابقة وإعادة تعيين الرتب غير المصرح بها
--- ----------------------------------------------------------------------------
-UPDATE public.profiles 
-SET role = 'developer' 
-WHERE role = 'owner' 
-AND id NOT IN ('e75a3a4f-b00b-458d-98a5-16d53922e54b');
-
-SELECT 'Phase 0 Security Lockdown Successfully Configured' as status;
+-- إنهاء
+SELECT 'Phase 0 Master Security Lockdown Successfully Applied' as status;
