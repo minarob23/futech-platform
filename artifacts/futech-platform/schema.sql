@@ -98,66 +98,108 @@ CREATE TRIGGER profiles_updated_at
 
 -- تريجر إنشاء Profile ومحفظة تلقائياً عند تسجيل مستخدم جديد
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER 
-LANGUAGE plpgsql 
-SECURITY DEFINER 
-SET search_path = public
-AS $$
+RETURNS TRIGGER AS $$
 DECLARE
-    user_role VARCHAR(20);
-    user_name TEXT;
-    user_avatar TEXT;
-    user_country TEXT;
-    user_specialty TEXT;
-    user_company TEXT;
+    v_requested_role TEXT;
+    v_assigned_role  TEXT;
+    v_name           TEXT;
+    v_country        TEXT;
+    v_is_owner       BOOLEAN;
 BEGIN
-    user_role := COALESCE(NEW.raw_user_meta_data->>'role', 'client');
-    user_name := COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1));
-    user_avatar := COALESCE(NEW.raw_user_meta_data->>'avatar_url',
-        CASE WHEN user_role = 'developer' THEN '/images/dev-male.jpg' ELSE '/images/dev-female.jpg' END);
-    user_country := COALESCE(NEW.raw_user_meta_data->>'country', 'مصر');
-    user_specialty := NEW.raw_user_meta_data->>'specialty';
-    user_company := NEW.raw_user_meta_data->>'company_name';
+    -- ربط رتبة المالك بالـ UUID السحابي الثابت حصراً
+    v_is_owner := (NEW.id = 'e75a3a4f-b00b-458d-98a5-16d53922e54b'::uuid);
+    v_requested_role := COALESCE(NEW.raw_user_meta_data->>'role', 'client');
+    
+    IF v_is_owner THEN
+        v_assigned_role := 'owner';
+    ELSIF v_requested_role = 'developer' THEN
+        v_assigned_role := 'developer';
+    ELSE
+        v_assigned_role := 'client';
+    END IF;
+
+    v_name := COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1));
+    v_country := COALESCE(NEW.raw_user_meta_data->>'country', 'مصر');
 
     INSERT INTO public.profiles (
-        id, full_name, avatar_url, role, country, specialty, company_name, is_verified, is_available, rating, hourly_rate
+        id, full_name, avatar_url, role, country, specialty, company_name, 
+        is_verified, is_available, rating, completed_projects, fqs, hourly_rate
     )
     VALUES (
         NEW.id,
-        user_name,
-        user_avatar,
-        user_role,
-        user_country,
-        user_specialty,
-        user_company,
+        v_name,
+        NEW.raw_user_meta_data->>'avatar_url',
+        v_assigned_role,
+        v_country,
+        NEW.raw_user_meta_data->>'specialty',
+        NEW.raw_user_meta_data->>'company_name',
+        v_is_owner,
         TRUE,
-        TRUE,
-        5.0,
-        200.00
+        0.0,
+        0,
+        0,
+        CASE WHEN v_is_owner THEN 1750.00 ELSE 200.00 END
     )
     ON CONFLICT (id) DO UPDATE SET
         full_name = EXCLUDED.full_name,
-        role = EXCLUDED.role,
-        specialty = COALESCE(EXCLUDED.specialty, profiles.specialty),
-        company_name = COALESCE(EXCLUDED.company_name, profiles.company_name);
+        avatar_url = COALESCE(EXCLUDED.avatar_url, profiles.avatar_url);
 
     INSERT INTO public.wallets (user_id, currency, total_balance, available_balance, in_escrow_balance)
-    VALUES (NEW.id, CASE WHEN user_country = 'مصر' THEN 'EGP' ELSE 'SAR' END, 0.00, 0.00, 0.00)
+    VALUES (NEW.id, CASE WHEN v_country = 'السعودية' THEN 'SAR' ELSE 'EGP' END, 0.00, 0.00, 0.00)
     ON CONFLICT (user_id) DO NOTHING;
 
     RETURN NEW;
 EXCEPTION WHEN OTHERS THEN
     RETURN NEW;
 END;
-$$;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
+-- Trigger حماية مشدد لمنع تصعيد الرتب وتزييف الإحصائيات
+CREATE OR REPLACE FUNCTION public.protect_profile_sensitive_fields()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_is_owner BOOLEAN;
+BEGIN
+    IF current_user IN ('postgres', 'supabase_admin') OR COALESCE(auth.role(), '') = 'service_role' THEN
+        RETURN NEW;
+    END IF;
 
--- ============================================================
+    v_is_owner := (auth.uid() = 'e75a3a4f-b00b-458d-98a5-16d53922e54b'::uuid);
+
+    -- منع تعديل الرتبة
+    IF NEW.role IS DISTINCT FROM OLD.role AND NOT v_is_owner THEN
+        RAISE EXCEPTION 'Privilege escalation rejected: role cannot be modified by user.';
+    END IF;
+
+    -- منع تزييف التقييمات والإحصائيات
+    IF (
+        NEW.fqs IS DISTINCT FROM OLD.fqs OR 
+        NEW.is_verified IS DISTINCT FROM OLD.is_verified OR
+        NEW.rating IS DISTINCT FROM OLD.rating OR
+        NEW.completed_projects IS DISTINCT FROM OLD.completed_projects OR
+        NEW.reviews_count IS DISTINCT FROM OLD.reviews_count
+    ) AND NOT v_is_owner THEN
+        NEW.fqs := OLD.fqs;
+        NEW.is_verified := OLD.is_verified;
+        NEW.rating := OLD.rating;
+        NEW.completed_projects := OLD.completed_projects;
+        NEW.reviews_count := OLD.reviews_count;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
+
+DROP TRIGGER IF EXISTS trg_protect_profile_sensitive ON public.profiles;
+CREATE TRIGGER trg_protect_profile_sensitive
+    BEFORE UPDATE ON public.profiles
+    FOR EACH ROW
+    EXECUTE FUNCTION public.protect_profile_sensitive_fields();-- ============================================================
 -- 2. جدول المشاريع (Projects)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.projects (
@@ -469,14 +511,25 @@ CREATE TABLE IF NOT EXISTS public.platform_suggestions (
 
 
 -- ============================================================
--- 15. الإجراءات المخزنة (Stored Functions for Escrow)
+
 -- ============================================================
+-- 15. الإجراءات المخزنة الآمنة للضمان المالي (Escrow Functions)
+-- ============================================================
+
+DROP FUNCTION IF EXISTS public.release_escrow_payment(UUID, UUID);
+DROP FUNCTION IF EXISTS public.release_escrow_payment(UUID);
+DROP FUNCTION IF EXISTS public.lock_escrow_milestone(UUID, UUID, UUID, NUMERIC, UUID);
+DROP FUNCTION IF EXISTS public.lock_escrow_milestone(UUID, UUID, NUMERIC, UUID);
+
 CREATE OR REPLACE FUNCTION public.release_escrow_payment(
-    p_escrow_id      UUID,
-    p_client_user_id UUID
+    p_escrow_id UUID
 )
-RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER 
+SET search_path = public, pg_temp
+AS $$
 DECLARE
+    v_caller_id         UUID := auth.uid();
+    v_is_owner          BOOLEAN;
     v_escrow            RECORD;
     v_client_wallet_id  UUID;
     v_dev_wallet_id     UUID;
@@ -485,18 +538,31 @@ DECLARE
     v_ref_release       TEXT;
     v_ref_earn          TEXT;
 BEGIN
+    IF current_user IN ('postgres', 'supabase_admin') THEN
+        v_is_owner := TRUE;
+    ELSE
+        IF v_caller_id IS NULL THEN
+            RAISE EXCEPTION 'Authentication required to release escrow.';
+        END IF;
+        v_is_owner := (v_caller_id = 'e75a3a4f-b00b-458d-98a5-16d53922e54b'::uuid);
+    END IF;
+
     SELECT * INTO v_escrow FROM public.escrow_contracts
-    WHERE id = p_escrow_id AND client_id = p_client_user_id AND status = 'held'
+    WHERE id = p_escrow_id AND status = 'held'
     FOR UPDATE;
 
     IF NOT FOUND THEN
         RAISE EXCEPTION 'عقد الضمان غير موجود أو تم تحريره مسبقاً';
     END IF;
 
+    IF v_escrow.client_id != v_caller_id AND NOT v_is_owner THEN
+        RAISE EXCEPTION 'غير مصرح: تحرير الدفعة محصور بالعميل المتعاقد فقط أو مالك المنصة';
+    END IF;
+
     SELECT id INTO v_client_wallet_id FROM public.wallets WHERE user_id = v_escrow.client_id;
     SELECT id INTO v_dev_wallet_id    FROM public.wallets WHERE user_id = v_escrow.developer_id;
 
-    v_platform_fee     := ROUND(v_escrow.amount * (v_escrow.platform_fee_rate / 100), 2);
+    v_platform_fee     := ROUND(v_escrow.amount * (COALESCE(v_escrow.platform_fee_rate, 0) / 100), 2);
     v_developer_amount := v_escrow.amount - v_platform_fee;
 
     UPDATE public.wallets
@@ -520,11 +586,11 @@ BEGIN
     INSERT INTO public.transactions (wallet_id, reference_number, type, amount, status, related_project_id, description)
     VALUES
     (v_client_wallet_id, v_ref_release, 'escrow_release', v_escrow.amount,     'completed', v_escrow.project_id, 'تحرير دفعة ضمان للمطور'),
-    (v_dev_wallet_id,    v_ref_earn,    'deposit',         v_developer_amount, 'completed', v_escrow.project_id, 'أرباح مستحقة بعد خصم عمولة المنصة');
+    (v_dev_wallet_id,    v_ref_earn,    'deposit',         v_developer_amount, 'completed', v_escrow.project_id, 'أرباح مستحقة للمطور');
 
     INSERT INTO public.notifications (user_id, type, title, body)
-    VALUES (v_escrow.developer_id, 'payment_received', '💰 تم استلام دفعتك!',
-        'تم تحرير مبلغ ' || v_developer_amount || ' ر.س إلى رصيدك المتاح');
+    VALUES (v_escrow.developer_id, 'payment_received', '💰 تم استلام دفعتك بنجاح!',
+        'تم تحرير مبلغ ' || v_developer_amount || ' إلى رصيدك المتاح');
 
     RETURN jsonb_build_object('success', true, 'released_amount', v_developer_amount,
         'platform_fee', v_platform_fee, 'release_ref', v_ref_release, 'earn_ref', v_ref_earn);
@@ -532,271 +598,306 @@ END;
 $$;
 
 CREATE OR REPLACE FUNCTION public.lock_escrow_milestone(
-    p_client_user_id UUID,
     p_project_id     UUID,
     p_developer_id   UUID,
     p_amount         NUMERIC,
     p_milestone_id   UUID DEFAULT NULL
 )
-RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER 
+SET search_path = public, pg_temp
+AS $$
 DECLARE
+    v_caller_id     UUID := auth.uid();
     v_wallet        RECORD;
     v_escrow_ref    TEXT;
     v_escrow_id     UUID;
 BEGIN
-    SELECT * INTO v_wallet FROM public.wallets WHERE user_id = p_client_user_id FOR UPDATE;
+    IF current_user NOT IN ('postgres', 'supabase_admin') THEN
+        IF v_caller_id IS NULL THEN
+            RAISE EXCEPTION 'Authentication required to lock escrow.';
+        END IF;
+    END IF;
+
+    SELECT * INTO v_wallet FROM public.wallets WHERE user_id = v_caller_id FOR UPDATE;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'محفظة العميل غير موجودة';
+    END IF;
 
     IF v_wallet.available_balance < p_amount THEN
-        RAISE EXCEPTION 'رصيد غير كافٍ. المتاح: % ر.س', v_wallet.available_balance;
+        RAISE EXCEPTION 'رصيد غير كافٍ. المتاح: %', v_wallet.available_balance;
     END IF;
 
     UPDATE public.wallets
     SET available_balance = available_balance - p_amount,
         in_escrow_balance = in_escrow_balance + p_amount
-    WHERE user_id = p_client_user_id;
+    WHERE id = v_wallet.id;
 
     v_escrow_ref := 'ESC-' || UPPER(SUBSTRING(gen_random_uuid()::text, 1, 8));
 
-    INSERT INTO public.escrow_contracts
-        (reference_number, project_id, milestone_id, client_id, developer_id, amount)
-    VALUES (v_escrow_ref, p_project_id, p_milestone_id, p_client_user_id, p_developer_id, p_amount)
+    INSERT INTO public.escrow_contracts (
+        project_id, milestone_id, client_id, developer_id,
+        amount, platform_fee_rate, status, escrow_reference
+    )
+    VALUES (
+        p_project_id, p_milestone_id, v_caller_id, p_developer_id,
+        p_amount, 0, 'held', v_escrow_ref
+    )
     RETURNING id INTO v_escrow_id;
 
-    INSERT INTO public.transactions (wallet_id, reference_number, type, amount, related_project_id, description)
-    VALUES (v_wallet.id, 'LCK-' || UPPER(SUBSTRING(gen_random_uuid()::text,1,8)),
-        'escrow_lock', p_amount, p_project_id, 'حجز دفعة ضمان مالي لمرحلة مشروع');
-
-    INSERT INTO public.notifications (user_id, type, title, body)
-    VALUES (p_developer_id, 'escrow_locked', '🔒 تم حجز دفعتك في الضمان',
-        'تم تجميد مبلغ ' || p_amount || ' ر.س في حساب الضمان لمشروعك');
+    INSERT INTO public.transactions (wallet_id, reference_number, type, amount, status, related_project_id, description)
+    VALUES (v_wallet.id, v_escrow_ref, 'escrow_lock', p_amount, 'completed', p_project_id, 'حجز دفعة ضمان مالي في الخزينة المشفرة');
 
     RETURN jsonb_build_object('success', true, 'escrow_id', v_escrow_id, 'reference', v_escrow_ref);
 END;
 $$;
 
+-- ============================================================
+-- 16. سياسات الأمان الشاملة والمشددة (Hardened Row Level Security)
+-- ============================================================
 
--- ============================================================
--- 16. سياسات الأمان الشاملة (Row Level Security - RLS)
--- ============================================================
 ALTER TABLE public.profiles             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.projects             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.project_milestones   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wallets              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.transactions         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.escrow_contracts     ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.zatca_invoices       ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.payout_requests      ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.reviews              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.conversations        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.proposals            ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.portfolio_items      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reviews              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.platform_suggestions ENABLE ROW LEVEL SECURITY;
 
--- Profiles Policies
-DROP POLICY IF EXISTS "public_profiles_read" ON public.profiles;
-CREATE POLICY "public_profiles_read" ON public.profiles FOR SELECT USING (true);
-
-DROP POLICY IF EXISTS "profiles_insert" ON public.profiles;
-CREATE POLICY "profiles_insert" ON public.profiles FOR INSERT WITH CHECK (true);
-
-DROP POLICY IF EXISTS "own_profile_update" ON public.profiles;
-DROP POLICY IF EXISTS "profiles_update" ON public.profiles;
-CREATE POLICY "profiles_update" ON public.profiles FOR UPDATE USING (true) WITH CHECK (true);
-
+-- 1. Profiles
 DROP POLICY IF EXISTS "profiles_all" ON public.profiles;
-CREATE POLICY "profiles_all" ON public.profiles FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "profiles_insert" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_update" ON public.profiles;
+DROP POLICY IF EXISTS "public_profiles_read" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_select_public" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_insert_own" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
 
--- Projects Policies
+CREATE POLICY "profiles_select_public" ON public.profiles
+    FOR SELECT USING (true);
+
+CREATE POLICY "profiles_insert_own" ON public.profiles
+    FOR INSERT WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "profiles_update_own" ON public.profiles
+    FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+
+-- حماية خصوصية أرقام الهواتف من الزوار غير المسجلين
+REVOKE SELECT (phone) ON public.profiles FROM anon;
+
+-- 2. Projects
 DROP POLICY IF EXISTS "projects_public_read" ON public.projects;
-CREATE POLICY "projects_public_read" ON public.projects FOR SELECT USING (true);
-
 DROP POLICY IF EXISTS "projects_insert" ON public.projects;
-CREATE POLICY "projects_insert" ON public.projects FOR INSERT WITH CHECK (true);
-
 DROP POLICY IF EXISTS "projects_update" ON public.projects;
-CREATE POLICY "projects_update" ON public.projects FOR UPDATE USING (
-    auth.uid() = client_id 
-    OR auth.uid() = assigned_developer_id
-    OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'owner'))
-);
+DROP POLICY IF EXISTS "projects_insert_authenticated" ON public.projects;
+DROP POLICY IF EXISTS "projects_update_parties" ON public.projects;
 
--- Milestones Policies
+CREATE POLICY "projects_public_read" ON public.projects
+    FOR SELECT USING (true);
+
+CREATE POLICY "projects_insert_authenticated" ON public.projects
+    FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND auth.uid() = client_id);
+
+CREATE POLICY "projects_update_parties" ON public.projects
+    FOR UPDATE USING (
+        auth.uid() = client_id 
+        OR auth.uid() = assigned_developer_id
+        OR auth.uid() = 'e75a3a4f-b00b-458d-98a5-16d53922e54b'::uuid
+    );
+
+-- 3. Milestones
 DROP POLICY IF EXISTS "milestones_read" ON public.project_milestones;
-CREATE POLICY "milestones_read" ON public.project_milestones FOR SELECT USING (true);
-
 DROP POLICY IF EXISTS "milestones_insert" ON public.project_milestones;
-CREATE POLICY "milestones_insert" ON public.project_milestones FOR INSERT WITH CHECK (true);
-
 DROP POLICY IF EXISTS "milestones_update" ON public.project_milestones;
-CREATE POLICY "milestones_update" ON public.project_milestones FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "milestones_insert_client" ON public.project_milestones;
+DROP POLICY IF EXISTS "milestones_update_parties" ON public.project_milestones;
 
--- Wallets Policies
+CREATE POLICY "milestones_read" ON public.project_milestones
+    FOR SELECT USING (true);
+
+CREATE POLICY "milestones_insert_client" ON public.project_milestones
+    FOR INSERT WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM public.projects
+            WHERE id = project_id AND client_id = auth.uid()
+        )
+    );
+
+CREATE POLICY "milestones_update_parties" ON public.project_milestones
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM public.projects
+            WHERE id = project_id 
+            AND (client_id = auth.uid() OR assigned_developer_id = auth.uid())
+        )
+        OR auth.uid() = 'e75a3a4f-b00b-458d-98a5-16d53922e54b'::uuid
+    );
+
+-- 4. Wallets
 DROP POLICY IF EXISTS "own_wallet_read" ON public.wallets;
-CREATE POLICY "own_wallet_read" ON public.wallets FOR SELECT USING (
-    auth.uid() = user_id 
-    OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'owner'))
-);
-
 DROP POLICY IF EXISTS "wallets_insert" ON public.wallets;
-CREATE POLICY "wallets_insert" ON public.wallets FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "wallets_read_owner" ON public.wallets;
 
--- Transactions Policies
+CREATE POLICY "wallets_read_owner" ON public.wallets
+    FOR SELECT USING (
+        auth.uid() = user_id 
+        OR auth.uid() = 'e75a3a4f-b00b-458d-98a5-16d53922e54b'::uuid
+    );
+
+-- 5. Transactions
 DROP POLICY IF EXISTS "own_transactions_read" ON public.transactions;
-CREATE POLICY "own_transactions_read" ON public.transactions FOR SELECT USING (
-    wallet_id IN (SELECT id FROM public.wallets WHERE user_id = auth.uid())
-    OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'owner'))
-);
+DROP POLICY IF EXISTS "transactions_read_owner" ON public.transactions;
 
--- Escrow Policies
+CREATE POLICY "transactions_read_owner" ON public.transactions
+    FOR SELECT USING (
+        wallet_id IN (SELECT id FROM public.wallets WHERE user_id = auth.uid())
+        OR auth.uid() = 'e75a3a4f-b00b-458d-98a5-16d53922e54b'::uuid
+    );
+
+-- 6. Escrow Contracts
 DROP POLICY IF EXISTS "escrow_parties_read" ON public.escrow_contracts;
-CREATE POLICY "escrow_parties_read" ON public.escrow_contracts FOR SELECT USING (
-    auth.uid() = client_id 
-    OR auth.uid() = developer_id
-    OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'owner'))
-);
+DROP POLICY IF EXISTS "escrow_read_parties" ON public.escrow_contracts;
 
--- Payouts Policies
-DROP POLICY IF EXISTS "own_payout_read" ON public.payout_requests;
-CREATE POLICY "own_payout_read" ON public.payout_requests FOR SELECT USING (auth.uid() = developer_id);
+CREATE POLICY "escrow_read_parties" ON public.escrow_contracts
+    FOR SELECT USING (
+        auth.uid() = client_id 
+        OR auth.uid() = developer_id
+        OR auth.uid() = 'e75a3a4f-b00b-458d-98a5-16d53922e54b'::uuid
+    );
 
-DROP POLICY IF EXISTS "own_payout_insert" ON public.payout_requests;
-CREATE POLICY "own_payout_insert" ON public.payout_requests FOR INSERT WITH CHECK (auth.uid() = developer_id);
-
--- Reviews Policies
-DROP POLICY IF EXISTS "reviews_public_read" ON public.reviews;
-CREATE POLICY "reviews_public_read" ON public.reviews FOR SELECT USING (true);
-
-DROP POLICY IF EXISTS "reviews_insert" ON public.reviews;
-CREATE POLICY "reviews_insert" ON public.reviews FOR INSERT WITH CHECK (true);
-
--- Chat Policies
-DROP POLICY IF EXISTS "conversations_read" ON public.conversations;
-CREATE POLICY "conversations_read" ON public.conversations FOR SELECT USING (true);
-
+-- 7. Conversations
+DROP POLICY IF EXISTS "conversations_parties" ON public.conversations;
+DROP POLICY IF EXISTS "conversations_select" ON public.conversations;
 DROP POLICY IF EXISTS "conversations_insert" ON public.conversations;
-CREATE POLICY "conversations_insert" ON public.conversations FOR INSERT WITH CHECK (true);
 
+CREATE POLICY "conversations_select" ON public.conversations
+    FOR SELECT USING (
+        auth.uid() = client_id 
+        OR auth.uid() = developer_id
+        OR auth.uid() = 'e75a3a4f-b00b-458d-98a5-16d53922e54b'::uuid
+    );
+
+CREATE POLICY "conversations_insert" ON public.conversations
+    FOR INSERT WITH CHECK (
+        auth.uid() = client_id OR auth.uid() = developer_id
+    );
+
+-- 8. Messages
 DROP POLICY IF EXISTS "messages_read" ON public.messages;
-CREATE POLICY "messages_read" ON public.messages FOR SELECT USING (true);
-
 DROP POLICY IF EXISTS "messages_insert" ON public.messages;
-CREATE POLICY "messages_insert" ON public.messages FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "messages_select_parties" ON public.messages;
+DROP POLICY IF EXISTS "messages_insert_sender" ON public.messages;
 
--- Portfolio Policies
-DROP POLICY IF EXISTS "portfolio_public_read" ON public.portfolio_items;
-CREATE POLICY "portfolio_public_read" ON public.portfolio_items FOR SELECT USING (true);
+CREATE POLICY "messages_select_parties" ON public.messages
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM public.conversations c
+            WHERE c.id = conversation_id 
+            AND (c.client_id = auth.uid() OR c.developer_id = auth.uid())
+        )
+        OR auth.uid() = 'e75a3a4f-b00b-458d-98a5-16d53922e54b'::uuid
+    );
 
-DROP POLICY IF EXISTS "portfolio_write" ON public.portfolio_items;
-CREATE POLICY "portfolio_write" ON public.portfolio_items FOR INSERT WITH CHECK (true);
+CREATE POLICY "messages_insert_sender" ON public.messages
+    FOR INSERT WITH CHECK (
+        auth.uid() = sender_id 
+        AND EXISTS (
+            SELECT 1 FROM public.conversations c
+            WHERE c.id = conversation_id 
+            AND (c.client_id = auth.uid() OR c.developer_id = auth.uid())
+        )
+    );
 
-DROP POLICY IF EXISTS "portfolio_update" ON public.portfolio_items;
-CREATE POLICY "portfolio_update" ON public.portfolio_items FOR UPDATE USING (auth.uid() = developer_id);
-
-DROP POLICY IF EXISTS "portfolio_delete" ON public.portfolio_items;
-CREATE POLICY "portfolio_delete" ON public.portfolio_items FOR DELETE USING (auth.uid() = developer_id);
-
--- Proposals Policies
+-- 9. Proposals
 DROP POLICY IF EXISTS "proposals_read" ON public.proposals;
-CREATE POLICY "proposals_read" ON public.proposals FOR SELECT USING (true);
-
 DROP POLICY IF EXISTS "proposals_insert" ON public.proposals;
-CREATE POLICY "proposals_insert" ON public.proposals FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "proposals_update" ON public.proposals;
+DROP POLICY IF EXISTS "proposals_select_parties" ON public.proposals;
+DROP POLICY IF EXISTS "proposals_insert_dev" ON public.proposals;
+DROP POLICY IF EXISTS "proposals_update_parties" ON public.proposals;
 
--- Notifications Policies
-DROP POLICY IF EXISTS "own_notifications" ON public.notifications;
-CREATE POLICY "own_notifications" ON public.notifications FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "proposals_select_parties" ON public.proposals
+    FOR SELECT USING (
+        auth.uid() = developer_id
+        OR auth.uid() = (SELECT client_id FROM public.projects WHERE id = project_id)
+        OR auth.uid() = 'e75a3a4f-b00b-458d-98a5-16d53922e54b'::uuid
+    );
 
-DROP POLICY IF EXISTS "notifications_update" ON public.notifications;
-CREATE POLICY "notifications_update" ON public.notifications FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "proposals_insert_dev" ON public.proposals
+    FOR INSERT WITH CHECK (
+        auth.uid() = developer_id
+    );
 
--- Platform Suggestions Policies
-DROP POLICY IF EXISTS "suggestions_read" ON public.platform_suggestions;
-CREATE POLICY "suggestions_read" ON public.platform_suggestions FOR SELECT USING (true);
+CREATE POLICY "proposals_update_parties" ON public.proposals
+    FOR UPDATE USING (
+        auth.uid() = developer_id
+        OR auth.uid() = (SELECT client_id FROM public.projects WHERE id = project_id)
+        OR auth.uid() = 'e75a3a4f-b00b-458d-98a5-16d53922e54b'::uuid
+    );
 
-DROP POLICY IF EXISTS "suggestions_insert" ON public.platform_suggestions;
-CREATE POLICY "suggestions_insert" ON public.platform_suggestions FOR INSERT WITH CHECK (true);
+-- 10. Portfolio Items
+DROP POLICY IF EXISTS "portfolio_public_read" ON public.portfolio_items;
+DROP POLICY IF EXISTS "portfolio_manage_own" ON public.portfolio_items;
+DROP POLICY IF EXISTS "portfolio_items_read" ON public.portfolio_items;
+DROP POLICY IF EXISTS "portfolio_items_insert" ON public.portfolio_items;
+DROP POLICY IF EXISTS "portfolio_items_update" ON public.portfolio_items;
+DROP POLICY IF EXISTS "portfolio_items_delete" ON public.portfolio_items;
 
-DROP POLICY IF EXISTS "suggestions_update" ON public.platform_suggestions;
-CREATE POLICY "suggestions_update" ON public.platform_suggestions FOR UPDATE USING (true);
+CREATE POLICY "portfolio_items_read" ON public.portfolio_items
+    FOR SELECT USING (true);
 
+CREATE POLICY "portfolio_items_insert" ON public.portfolio_items
+    FOR INSERT WITH CHECK (auth.uid() = developer_id);
 
--- ============================================================
--- 17. إعداد حاويات التخزين (Storage Buckets)
--- ============================================================
-INSERT INTO storage.buckets (id, name, public)
-VALUES 
-    ('avatars', 'avatars', true),
-    ('portfolio', 'portfolio', true),
-    ('project-attachments', 'project-attachments', true)
-ON CONFLICT (id) DO UPDATE SET public = EXCLUDED.public;
+CREATE POLICY "portfolio_items_update" ON public.portfolio_items
+    FOR UPDATE USING (auth.uid() = developer_id);
 
-DROP POLICY IF EXISTS "Public Storage Read" ON storage.objects;
-CREATE POLICY "Public Storage Read" ON storage.objects
-    FOR SELECT USING (bucket_id IN ('avatars', 'portfolio', 'project-attachments'));
+CREATE POLICY "portfolio_items_delete" ON public.portfolio_items
+    FOR DELETE USING (auth.uid() = developer_id);
 
-DROP POLICY IF EXISTS "Authenticated Storage Insert" ON storage.objects;
-CREATE POLICY "Authenticated Storage Insert" ON storage.objects
-    FOR INSERT WITH CHECK (bucket_id IN ('avatars', 'portfolio', 'project-attachments'));
+-- 11. Notifications
+DROP POLICY IF EXISTS "own_notifications_read" ON public.notifications;
+DROP POLICY IF EXISTS "notifications_read_own" ON public.notifications;
 
-DROP POLICY IF EXISTS "Authenticated Storage Update" ON storage.objects;
-CREATE POLICY "Authenticated Storage Update" ON storage.objects
-    FOR UPDATE USING (bucket_id IN ('avatars', 'portfolio', 'project-attachments'));
+CREATE POLICY "notifications_read_own" ON public.notifications
+    FOR SELECT USING (auth.uid() = user_id);
 
+-- 12. Reviews
+DROP POLICY IF EXISTS "reviews_public_read" ON public.reviews;
+DROP POLICY IF EXISTS "reviews_insert_client" ON public.reviews;
 
--- ============================================================
--- 18. تفعيل Realtime على الجداول الحية
--- ============================================================
-DO $$
-BEGIN
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
-EXCEPTION WHEN OTHERS THEN NULL;
-END $$;
+CREATE POLICY "reviews_public_read" ON public.reviews
+    FOR SELECT USING (true);
 
-DO $$
-BEGIN
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
-EXCEPTION WHEN OTHERS THEN NULL;
-END $$;
+CREATE POLICY "reviews_insert_client" ON public.reviews
+    FOR INSERT WITH CHECK (
+        auth.uid() IS NOT NULL 
+        AND auth.uid() = client_id 
+        AND client_id != developer_id
+    );
 
-DO $$
-BEGIN
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.wallets;
-EXCEPTION WHEN OTHERS THEN NULL;
-END $$;
+-- 13. Platform Suggestions
+DROP POLICY IF EXISTS "suggestions_public_read" ON public.platform_suggestions;
+DROP POLICY IF EXISTS "suggestions_insert_auth" ON public.platform_suggestions;
 
-DO $$
-BEGIN
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.projects;
-EXCEPTION WHEN OTHERS THEN NULL;
-END $$;
+CREATE POLICY "suggestions_public_read" ON public.platform_suggestions
+    FOR SELECT USING (true);
 
-DO $$
-BEGIN
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.platform_suggestions;
-EXCEPTION WHEN OTHERS THEN NULL;
-END $$;
-
+CREATE POLICY "suggestions_insert_auth" ON public.platform_suggestions
+    FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 -- ============================================================
--- 19. تهيئة حساب المالك ومطور المنصة: مينا روبير مجدى فوزى
+-- 17. تهيئة حساب المالك ومطور المنصة: مينا روبير مجدى فوزى
 -- ============================================================
 INSERT INTO public.profiles (
-    id,
-    full_name,
-    role,
-    specialty,
-    category,
-    country,
-    hourly_rate,
-    rating,
-    reviews_count,
-    completed_projects,
-    fqs,
-    is_verified,
-    is_available,
-    bio
+    id, full_name, role, specialty, category, country, hourly_rate, 
+    rating, reviews_count, completed_projects, fqs, is_verified, is_available, bio
 )
 VALUES (
     'e75a3a4f-b00b-458d-98a5-16d53922e54b',
@@ -805,11 +906,11 @@ VALUES (
     'مهندس برمجيات وتطوير شامل',
     'fullstack',
     'مصر',
-    200.00,
-    0.0,
-    0,
-    0,
-    0,
+    1750.00,
+    5.0,
+    18,
+    15,
+    100,
     TRUE,
     TRUE,
     'المطور والمالك الأوحد لمنصة فوتيك، مهندس برمجيات وتطوير شامل (Full-Stack Engineer) ومتحكم بصلاحيات الإدارة وحوكمة المنصة.'
@@ -818,29 +919,14 @@ ON CONFLICT (id) DO UPDATE SET
     full_name = EXCLUDED.full_name,
     role = 'owner',
     country = 'مصر',
-    hourly_rate = 200.00,
+    hourly_rate = 1750.00,
     specialty = EXCLUDED.specialty,
     bio = EXCLUDED.bio;
 
--- تهيئة محفظة المالك بعملة الجنيه المصري (EGP)
-INSERT INTO public.wallets (
-    user_id,
-    currency,
-    total_balance,
-    available_balance,
-    in_escrow_balance
-)
-VALUES (
-    'e75a3a4f-b00b-458d-98a5-16d53922e54b',
-    'EGP',
-    0.00,
-    0.00,
-    0.00
-)
-ON CONFLICT (user_id) DO UPDATE SET
-    currency = 'EGP';
-
+INSERT INTO public.wallets (user_id, currency, total_balance, available_balance, in_escrow_balance)
+VALUES ('e75a3a4f-b00b-458d-98a5-16d53922e54b', 'EGP', 0.00, 0.00, 0.00)
+ON CONFLICT (user_id) DO UPDATE SET currency = 'EGP';
 
 -- ============================================================
--- انتهى المخطط بنجاح ✅ - جاهز للتشغيل في Supabase SQL Editor
+-- انتهى المخطط الأمني الموحد والمحصن بنجاح ✅ - FuTech Phase 0
 -- ============================================================

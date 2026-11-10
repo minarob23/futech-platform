@@ -39,7 +39,7 @@ import { User, UserRole, Store, AppNotification } from '../types';
 import { ThemeToggle } from './ThemeToggle';
 import { useAuth } from '../lib/AuthContext';
 import { UserAvatar } from './UserAvatar';
-import { isOwnerIdentity, isOwnerEmail } from '../lib/ownerAuth';
+import { isOwnerIdentity, isOwnerEmail, OWNER_SUPABASE_ID } from '../lib/ownerAuth';
 import {
   getRealNotifications,
   saveReadNotificationId,
@@ -235,7 +235,7 @@ export function UnifiedNavbar({
   const primaryLinks = navLinks.slice(0, 4);
   const secondaryLinks = navLinks.slice(4);
 
-  const isOwnerUser = Boolean(currentUser?.email && isOwnerEmail(currentUser.email));
+  const isOwnerUser = Boolean(currentUser && (currentUser.id === OWNER_SUPABASE_ID || currentUser.id === 'usr-owner-mina'));
 
   const getDashboardPath = (role?: UserRole, name?: string) => {
     if (isOwnerUser) return '/owner-dashboard';

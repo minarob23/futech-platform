@@ -198,6 +198,11 @@ export function AuthModal({
       showModalError(error);
       return;
     }
+    if (auth.session?.user?.id && auth.session.user.id !== OWNER_SUPABASE_ID) {
+      await auth.signOut();
+      showModalError('⛔ هذا الحساب لا يملك تصريح مالك المنصة التنفيذي');
+      return;
+    }
     const ownerUser = buildOwnerUser(cleanEmail, auth.profile?.avatar_url || undefined);
     onLogin(ownerUser);
     notify('مرحباً بك يا بشمهندس مينا! تم تفعيل صلاحيات مالك المنصة التنفيذية 👑');
@@ -233,7 +238,7 @@ export function AuthModal({
 
     // بعد نجاح تسجيل الدخول، نجهز كائن المستخدم المعتمد
     const profile = auth.profile;
-    const isOwner = Boolean(cleanEmail && isOwnerEmail(cleanEmail));
+    const isOwner = Boolean(cleanEmail === OWNER_DEFAULT_EMAIL && (profile?.id === OWNER_SUPABASE_ID || auth.session?.user?.id === OWNER_SUPABASE_ID));
     const user: User = isOwner
       ? buildOwnerUser(cleanEmail, profile?.avatar_url || undefined)
       : {
@@ -278,6 +283,10 @@ export function AuthModal({
     e.preventDefault();
     setModalMessage(null);
     const cleanEmail = sanitizeEmail(devEmail);
+    if (isOwnerEmail(cleanEmail) || cleanEmail === OWNER_DEFAULT_EMAIL) {
+      showModalError('⛔ هذا البريد محجوز لحساب إدارة المنصة وغير متاح للتسجيل العام');
+      return;
+    }
 
     if (!devName.trim() || !cleanEmail || !devPassword.trim()) {
       showModalError('يرجى استكمال جميع البيانات الإلزامية المطلوبة');
@@ -348,6 +357,10 @@ export function AuthModal({
     e.preventDefault();
     setModalMessage(null);
     const cleanEmail = sanitizeEmail(clientEmail);
+    if (isOwnerEmail(cleanEmail) || cleanEmail === OWNER_DEFAULT_EMAIL) {
+      showModalError('⛔ هذا البريد محجوز لحساب إدارة المنصة وغير متاح للتسجيل العام');
+      return;
+    }
 
     if (!clientName.trim() || !cleanEmail || !clientPassword.trim()) {
       showModalError('يرجى استكمال الحقول المطلوبة (الاسم، البريد، كلمة المرور)');

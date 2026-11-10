@@ -8,7 +8,7 @@ import {
 import { Store } from '../types';
 import { UserAvatar } from './UserAvatar';
 import { ThemeToggle } from './ThemeToggle';
-import { isOwnerEmail } from '../lib/ownerAuth';
+import { isOwnerEmail, OWNER_SUPABASE_ID } from '../lib/ownerAuth';
 
 interface DeveloperPortalLayoutProps {
   store: Store;
@@ -26,7 +26,7 @@ export function DeveloperPortalLayout({
   children,
 }: DeveloperPortalLayoutProps) {
   const [devMobileOpen, setDevMobileOpen] = useState(false);
-  const isOwnerUser = Boolean(store.currentUser?.email && isOwnerEmail(store.currentUser.email));
+  const isOwnerUser = Boolean(store.currentUser && (store.currentUser.id === OWNER_SUPABASE_ID || store.currentUser.id === 'usr-owner-mina'));
   const activeDevTab = route === '/dashboard' ? (new URLSearchParams(searchStr).get('tab') || 'overview') : null;
 
   const devSuiteItems = [

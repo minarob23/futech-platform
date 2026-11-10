@@ -399,6 +399,20 @@ export function EscrowWalletHub({
         </div>
       </div>
 
+      {/* ⚠️ Prototype Sandbox Notice (Honesty in UI) */}
+      <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs">
+        <div className="flex flex-wrap items-center gap-2 font-black text-amber-900 dark:text-amber-300 text-sm">
+          <span>🧪</span>
+          <span>بيئة محاكاة وتجربة الضمان المالي (Escrow Prototype Sandbox)</span>
+          <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold border border-amber-500/30">
+            تجريبي للعرض
+          </span>
+        </div>
+        <p className="mt-1.5 text-xs text-amber-800/90 dark:text-amber-200/90 leading-relaxed">
+          نظام شحن المحفظة وحجز مبالغ الضمان (Escrow) الحالي يعمل في بيئة محاكاة واختبار هندسية تجريبية لحفظ وتجربة دورة تسليم المشاريع وكود FQS، ولا يتم إجراء أي خصم بنكي حقيقي لحين إتمام التعاقد مع بوابات الدفع الرسمية.
+        </p>
+      </div>
+
       {/* 2. 3 Main Financial KPI Balance Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {/* Total Wallet Balance */}
@@ -765,9 +779,9 @@ export function EscrowWalletHub({
               </button>
             </div>
 
-            {/* Clear Advisory Notice to prevent any customer misunderstanding */}
-            <div className="mt-3 rounded-2xl border border-teal-200/80 bg-teal-50/70 p-3 text-[11px] leading-relaxed text-teal-900 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-200">
-              🔒 <b>تنبيه الأمان والشفافية:</b> بوابات الدفع التلقائي بالبطاقات (Visa / MC / Apple Pay) قيد الربط المصرفي الرسمي (قريباً). العمليات تتم حالياً بصورة مؤمنة ومشفرة بالكامل عبر <b>التحويل البنكي المعتمد وخزينة الضمان المركزي لمنصة فوتيك</b> دون أي عمولات إضافية، مع توثيق فوري وإصدار إيصال معتمد.
+            {/* Clear Advisory Notice (Honesty in UI - Sandbox) */}
+            <div className="mt-3 rounded-2xl border border-amber-300/80 bg-amber-50/80 p-3 text-[11px] leading-relaxed text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
+              🧪 <b>بيئة محاكاة وتجربة (Prototype Escrow Sandbox):</b> نظام المحفظة وحجز الدفعات يعمل حالياً في بيئة محاكاة برمجية استعراضية لتوثيق دورة تسليم المشاريع وضمان جودة الكود FQS دون إجراء أي خصم بنكي حقيقي حتى تفعيل التعاقد مع بوابات الدفع الرسمية.
             </div>
 
             <form onSubmit={handleDepositSubmit} className="mt-4 space-y-4 text-xs">

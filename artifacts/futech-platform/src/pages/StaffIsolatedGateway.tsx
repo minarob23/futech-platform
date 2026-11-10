@@ -7,7 +7,8 @@ import {
 import { Store, User } from '../types';
 import { useAuth } from '../lib/AuthContext';
 import {
-  OWNER_EMAILS,
+  OWNER_SUPABASE_ID,
+  OWNER_DEFAULT_EMAIL,
   OWNER_FULL_NAME,
   isOwnerEmail,
   buildOwnerUser,
@@ -52,7 +53,7 @@ export function StaffIsolatedGateway({
   const [adminLoading, setAdminLoading] = useState(false);
 
   const currentUser = store.currentUser;
-  const isOwnerLoggedIn = Boolean(currentUser?.email && isOwnerEmail(currentUser.email));
+  const isOwnerLoggedIn = Boolean(currentUser && (currentUser.id === OWNER_SUPABASE_ID || currentUser.id === 'usr-owner-mina'));
   const isAdminLoggedIn = isOwnerLoggedIn || currentUser?.role === 'admin';
 
   // Handle Owner Login
@@ -307,24 +308,7 @@ export function StaffIsolatedGateway({
                       <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                     </div>
 
-                    {/* Quick selection pills for the 3 owner emails */}
-                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      <span className="text-[10px] font-bold text-slate-400">حسابات المالك المعتمدة:</span>
-                      {OWNER_EMAILS.map((em) => (
-                        <button
-                          key={em}
-                          type="button"
-                          onClick={() => setOwnerEmail(em)}
-                          className={`rounded-lg px-2 py-0.5 text-[10px] font-bold transition ${
-                            ownerEmail === em
-                              ? 'bg-amber-500 text-slate-950 font-black shadow-2xs'
-                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
-                          }`}
-                        >
-                          {em}
-                        </button>
-                      ))}
-                    </div>
+                    
                   </div>
 
                   <div>

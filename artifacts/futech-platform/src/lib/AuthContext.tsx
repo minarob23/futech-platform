@@ -8,8 +8,9 @@ import {
   isOwnerEmail,
   isOwnerIdentity,
   OWNER_FULL_NAME,
-  OWNER_USER_ID,
+  OWNER_SUPABASE_ID,
   OWNER_DEFAULT_EMAIL,
+  OWNER_USER_ID,
   getOwnerSyncedAvatar,
   setOwnerSyncedAvatar,
   OWNER_GOOGLE_AVATAR_URL,
@@ -97,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (data) {
         const activeCandidateEmail = userMeta?.email || (data as any).email;
-        const isOwner = Boolean(activeCandidateEmail && isOwnerEmail(activeCandidateEmail));
+        const isOwner = userId === OWNER_SUPABASE_ID || userId === OWNER_USER_ID;
         if (isOwner) {
           data.role = 'owner';
           data.full_name = OWNER_FULL_NAME;
@@ -130,9 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // إذا لم يكن الصف موجوداً في profiles بعد، ننشئه من بيانات المستخدم المسجلة ونحفظه في Supabase
       const meta = userMeta || {};
       const candidateEmail = meta.email || (meta as any).user_email || '';
-      const isMina =
-        isOwnerIdentity({ id: userId, email: candidateEmail, full_name: meta.full_name }) ||
-        isOwnerEmail(candidateEmail);
+      const isMina = userId === OWNER_SUPABASE_ID || userId === OWNER_USER_ID;
 
       let intendedRole: AppRole = 'developer';
       if (typeof window !== 'undefined') {

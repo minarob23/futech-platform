@@ -85,7 +85,7 @@ export function DeveloperDashboard({ store, update, notify, go }: DeveloperDashb
     (store.currentUser.role === 'developer' || store.currentUser.role === 'owner')
   );
 
-  const isOwner = Boolean(store.currentUser?.email && isOwnerEmail(store.currentUser.email));
+  const isOwner = Boolean(store.currentUser && (store.currentUser.id === OWNER_SUPABASE_ID || store.currentUser.id === 'usr-owner-mina'));
   const ownerAvatar = isOwner ? (getOwnerSyncedAvatar() || OWNER_GOOGLE_AVATAR_URL) : '';
   const resolvedAvatar = store.currentUser?.avatar || ownerAvatar || '';
 

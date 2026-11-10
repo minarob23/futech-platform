@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
 import { validateUploadedFile } from './fileSecurity';
-import { buildOwnerDeveloper, isOwnerEmail } from './ownerAuth';
+import { buildOwnerDeveloper, isOwnerEmail, OWNER_SUPABASE_ID } from './ownerAuth';
 import { Developer, Project, UserWallet, WalletTransaction, PortfolioItem, ClientReview, Application } from '../types';
 
 function isValidUuid(id?: string | null): boolean {
@@ -89,7 +89,7 @@ export async function fetchDevelopers(): Promise<Developer[]> {
     const mappedDevs: Developer[] = safeProfiles.map((p: any) => {
       const isMina =
         p.id === 'e75a3a4f-b00b-458d-98a5-16d53922e54b' ||
-        (p.email && isOwnerEmail(p.email));
+        (p.id === OWNER_SUPABASE_ID || p.id === 'usr-owner-mina');
 
       const devReviewsCount = p.reviews_count || (reviewsMap[p.id]?.length || 0);
       const devCompletedProjects = p.reviews_count || 0;

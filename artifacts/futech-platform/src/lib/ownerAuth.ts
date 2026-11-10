@@ -6,46 +6,37 @@ import { User, UserRole, Developer } from '../types';
  * ─────────────────────────────────────────────────────────────────────────────
  * المالك الوحيد المعتمد للمنصة بكافة الصلاحيات التنفيذية وحوكمة النظام:
  * الاسم: مينا روبير مجدى فوزى
- * العناوين الرسمية المعتمدة:
- * 1. menarobir246rm@gmail.com
- * 2. minarobir246rm@gmail.com
- * 3. minarobir@gmail.com
+ * المعرف السحابي الثابت (Supabase Auth UUID): e75a3a4f-b00b-458d-98a5-16d53922e54b
+ * البريد الرسمي المعتمد: menarobir246rm@gmail.com
+ * تم إلغاء كافة الإيميلات البديلة غير المسجلة لمنع ثغرات الـ Pre-ATO نهائياً
  */
 
+export const OWNER_SUPABASE_ID = 'e75a3a4f-b00b-458d-98a5-16d53922e54b';
+export const OWNER_DEFAULT_EMAIL = 'menarobir246rm@gmail.com';
+
 export const OWNER_EMAILS = [
-  'menarobir246rm@gmail.com',
-  'minarobir246rm@gmail.com',
-  'minarobir@gmail.com',
-  'mina.robir@gmail.com',
-  'mena.robir@gmail.com',
-  'minarob23@gmail.com',
+  OWNER_DEFAULT_EMAIL,
 ] as const;
 
 export const OWNER_FULL_NAME = 'مينا روبير مجدى فوزى';
-export const OWNER_USER_ID = 'usr-owner-mina';
-export const OWNER_DEFAULT_EMAIL = 'menarobir246rm@gmail.com';
+export const OWNER_USER_ID = OWNER_SUPABASE_ID;
 export const OWNER_GOOGLE_AVATAR_URL = 'https://lh3.googleusercontent.com/a/ACg8ocL551jnG3_Ko99OLnO-FISv31XIL2U2VITiBzTcd5Z93UB_y2o=s120-c';
 export const OWNER_LOCAL_AVATAR_PATH = '/images/owner-google-avatar.webp';
 
 const OWNER_AVATAR_STORAGE_KEY = 'futech_owner_synced_avatar';
 
 /**
- * فحص ما إذا كان البريد الإلكتروني ينتمي لمالك المنصة (Mina Robir Magdy Fawzy)
- * يدعم كافة العناوين الرسمية المعتمدة لمالك المنصة:
- * 1. menarobir246rm@gmail.com
- * 2. minarobir246rm@gmail.com
- * 3. minarobir@gmail.com
- * بالإضافة إلى أي متغيرات بنقاط أو بادئات تابعة للمالك.
+ * فحص ما إذا كان البريد الإلكتروني هو البريد الرسمي الوحيد لمالك المنصة
  */
 export function isOwnerEmail(email?: string | null): boolean {
   if (!email) return false;
-  const clean = email.trim().toLowerCase();
-  return (OWNER_EMAILS as readonly string[]).includes(clean);
+  return email.trim().toLowerCase() === OWNER_DEFAULT_EMAIL;
 }
 
 /**
  * فحص ما إذا كان المستخدم أو الملف الشخصي يمثل مالك المنصة
- * التحقق حصراً عبر البريد الإلكتروني المعتمد أو المعرف الرقمي الصارم
+ * الأمان الصارم: التحقق حصراً عبر المعرف الرقمي السحابي المشفر الثابت (UUID)
+ * لا يُمنح أي حساب صلاحية المالك بناءً على البريد أو الاسم فقط
  */
 export function isOwnerIdentity(userOrProfile?: {
   id?: string;
@@ -55,13 +46,11 @@ export function isOwnerIdentity(userOrProfile?: {
   role?: string;
 } | null): boolean {
   if (!userOrProfile) return false;
-  if (userOrProfile.email && isOwnerEmail(userOrProfile.email)) return true;
-  return false;
+  return userOrProfile.id === OWNER_SUPABASE_ID || userOrProfile.id === 'usr-owner-mina';
 }
 
 /**
  * جلب الصورة المشتركة لمالك المنصة المحفوظة سحابياً ومحلياً
- * تضمن ظهور نفس الصورة الشخصية حتى وإن سجل المالك الدخول من بريد مختلف
  */
 export function getOwnerSyncedAvatar(): string {
   if (typeof window === 'undefined') return OWNER_LOCAL_AVATAR_PATH;
@@ -73,7 +62,7 @@ export function getOwnerSyncedAvatar(): string {
 }
 
 /**
- * حفظ وتوحيد صورة حساب مالك المنصة عبر كافة إيميلاته
+ * حفظ وتوحيد صورة حساب مالك المنصة
  */
 export function setOwnerSyncedAvatar(avatar?: string | null): void {
   if (typeof window === 'undefined') return;
@@ -87,16 +76,15 @@ export function setOwnerSyncedAvatar(avatar?: string | null): void {
  * إنشاء أو مزامنة كائن مستخدم المالك المعتمد بكافة الصلاحيات التنفيذية
  */
 export function buildOwnerUser(activeEmail?: string, currentAvatar?: string): User {
-  const chosenEmail = (activeEmail && isOwnerEmail(activeEmail)) ? activeEmail.trim().toLowerCase() : OWNER_DEFAULT_EMAIL;
   const syncedAvatar = currentAvatar || getOwnerSyncedAvatar() || OWNER_GOOGLE_AVATAR_URL;
   if (syncedAvatar) {
     setOwnerSyncedAvatar(syncedAvatar);
   }
 
   return {
-    id: OWNER_USER_ID,
+    id: OWNER_SUPABASE_ID,
     name: OWNER_FULL_NAME,
-    email: chosenEmail,
+    email: OWNER_DEFAULT_EMAIL,
     role: 'owner',
     avatar: syncedAvatar,
     country: 'جمهورية مصر العربية',
@@ -113,7 +101,6 @@ export function buildOwnerUser(activeEmail?: string, currentAvatar?: string): Us
   };
 }
 
-
 /**
  * إنشاء وتمثيل المطور والمهندس الأوحد ومؤسس المنصة (مينا روبير مجدى فوزى)
  * ليكون المهندس الأول المتصدر في قائمة أبرز المطورين المتاحين للعمل
@@ -122,7 +109,7 @@ export function buildOwnerDeveloper(): Developer {
   const syncedAvatar = getOwnerSyncedAvatar() || OWNER_LOCAL_AVATAR_PATH || OWNER_GOOGLE_AVATAR_URL;
 
   return {
-    id: OWNER_USER_ID,
+    id: OWNER_SUPABASE_ID,
     name: 'المهندس مينا روبير مجدى فوزى',
     avatar: syncedAvatar,
     specialty: 'مهندس برمجيات وتطوير شامل (Full-Stack Engineer)',
@@ -271,7 +258,6 @@ export function buildOwnerDeveloper(): Developer {
           'واجهات برمجية عالية الأداء مبنية بإطار FastAPI وقواعد بيانات PostgreSQL مع لوحات تحليلية تفاعلية',
         ],
       },
-      
     ],
     reviews: [
       {

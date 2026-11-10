@@ -20,6 +20,7 @@ import { useAuth } from './lib/AuthContext';
 import {
   isOwnerEmail,
   isOwnerIdentity,
+  OWNER_SUPABASE_ID,
   OWNER_FULL_NAME,
   getOwnerSyncedAvatar,
   setOwnerSyncedAvatar,
@@ -173,7 +174,7 @@ function loadInitialStore(): Store {
 
     let sanitizedUser = parsed.currentUser && parsed.currentUser.id ? parsed.currentUser : null;
     if (sanitizedUser) {
-      if (sanitizedUser.email && isOwnerEmail(sanitizedUser.email)) {
+      if (sanitizedUser.id === OWNER_SUPABASE_ID || sanitizedUser.id === 'usr-owner-mina') {
         sanitizedUser.name = OWNER_FULL_NAME;
         sanitizedUser.role = 'owner';
         const syncedAvatar = getOwnerSyncedAvatar();
@@ -353,7 +354,10 @@ export default function App() {
     if (currentProfile) {
       setStore((prev) => {
         const activeEmail = auth.session?.user?.email || (currentProfile as any).email || '';
-        const isMina = Boolean(activeEmail && isOwnerEmail(activeEmail));
+        const isMina = Boolean(
+          (auth.session?.user?.id === OWNER_SUPABASE_ID) ||
+          (currentProfile.id === OWNER_SUPABASE_ID)
+        );
         const resolvedRole: UserRole = isMina
           ? 'owner'
           : (currentProfile.role === 'admin' ? 'admin' : (currentProfile.role === 'client' ? 'client' : 'developer'));
@@ -443,10 +447,9 @@ export default function App() {
       if (isOAuthPending) {
         sessionStorage.removeItem('futech_oauth_pending_redirect');
 
-        const isOwner =
-          store.currentUser.role === 'owner' ||
-          isOwnerIdentity(store.currentUser) ||
-          isOwnerEmail(store.currentUser.email);
+        const isOwner = Boolean(
+          store.currentUser.id === OWNER_SUPABASE_ID || store.currentUser.id === 'usr-owner-mina'
+        );
 
         if (isOwner) {
           notify('مرحباً بك يا بشمهندس مينا! تم التعرف على حسابك كمالك المنصة والدخول بنجاح 👑');
@@ -825,7 +828,7 @@ export default function App() {
               )
             )}
             {route === '/owner-dashboard' && (
-              Boolean(store.currentUser?.email && isOwnerEmail(store.currentUser.email)) ? (
+              Boolean(store.currentUser && (store.currentUser.id === OWNER_SUPABASE_ID || store.currentUser.id === 'usr-owner-mina')) ? (
                 <OwnerDashboard
                   store={store}
                   update={update}

@@ -1813,8 +1813,8 @@ export function OwnerDashboard({
                             const roleName = rep.role || rep.senderRole || 'client';
                             const isOwnerReply =
                               roleName === 'owner' ||
-                              authorName.includes('المالك') ||
-                              authorName.includes('مينا');
+                              authorName === 'المهندس مينا روبير مجدى فوزى' ||
+                              authorName.includes('المالك التنفيذي');
                             const isAdminReply =
                               roleName === 'admin' ||
                               roleName === 'support' ||
